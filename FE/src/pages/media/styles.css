@@ -1,0 +1,20 @@
+:root {
+    --media-line-count: 5;
+    --media-gap: 6px;
+  }
+
+.media-img{
+    width: calc((100% - calc(var(--media-line-count) - 1) * var(--media-gap)) / var(--media-line-count));
+    height: 400px;
+}
+
+.footer-container{
+    background-color: #1976d2;
+}
+.media img {
+ list-style-type: none;
+ border: 1px solid gray;
+ padding: 5px;
+ width: 210px;
+ height: 210px;
+}

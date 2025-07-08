@@ -1,0 +1,15 @@
+.header-container{
+    display: flex;
+    min-width: 100%;
+    min-height: 60px;
+    padding: 4px 12px;
+    background-color: white;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.header-logo{
+    width: 120px;
+    height: 70px;
+    object-fit: contain;
+}
