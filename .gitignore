@@ -1,0 +1,30 @@
+# macOS system files
+.DS_Store
+
+# Node modules (frontend + backend)
+FE/node_modules/
+BE/node_modules/
+
+# Build output (frontend)
+FE/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# dotenv environment files (security!)
+.env
+.env.*.local
+FE/.env
+BE/.env
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# Optional backend directories
+BE/uploads/
+BE/tmp/
