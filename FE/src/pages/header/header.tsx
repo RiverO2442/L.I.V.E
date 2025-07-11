@@ -7,6 +7,7 @@ import {
   saveSearch,
 } from "../../service/service";
 import { CloseOutlined, SearchOutlined } from "@ant-design/icons";
+import "./styles.css";
 
 export default function Header({ onSearchChange }: any) {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export default function Header({ onSearchChange }: any) {
   }, []);
   return (
     <div
-      className={`"w-full h-auto items-center justify-center"2 ${
+      className={`"header-container w-full h-auto items-center justify-center"2 ${
         location.pathname === "/login" && "hidden"
       }`}
     >
