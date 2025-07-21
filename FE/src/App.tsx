@@ -5,11 +5,13 @@ import "./App.css";
 import Footer from "./pages/footer/footer";
 import Header from "./pages/header/header";
 import SignIn from "./pages/login/login";
-import Media from "./pages/media/media";
+import HomePage from "./pages/home/home";
 import AudioDetail from "./pages/media/media-detail/audio-detail";
-import ImageDetail from "./pages/media/media-detail/image-detail";
 import Register from "./pages/register/register";
 import ProtectedRoute from "./utility/ProtectedRoute";
+import ModulesPage from "./pages/module/modules";
+import HealthyEatingModule from "./pages/module/detail/heathy";
+import QuizPage from "./pages/quiz/quiz";
 
 const App: React.FC = () => {
   const [headerParams, setHeaderParams] = useState({
@@ -48,13 +50,13 @@ const App: React.FC = () => {
         width={"100%"}
       >
         <Header onSearchChange={checkHeaderValue} />
-        <div className="flex flex-row bg-white min-h-[1000px]">
+        <div className="flex flex-col bg-white min-h-[1000px]">
           <Routes>
             <Route
-              path="/images/:id"
+              path="/modules"
               element={
                 <ProtectedRoute authenticated={Authentication()}>
-                  <ImageDetail />
+                  <ModulesPage />
                 </ProtectedRoute>
               }
             />
@@ -62,15 +64,23 @@ const App: React.FC = () => {
               path="/"
               element={
                 <ProtectedRoute authenticated={Authentication()}>
-                  <Media headerParams={headerParams} />
+                  <HomePage />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/audios/:id"
+              path="/modules/:id"
               element={
                 <ProtectedRoute authenticated={Authentication()}>
-                  <AudioDetail />
+                  <HealthyEatingModule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quiz/"
+              element={
+                <ProtectedRoute authenticated={Authentication()}>
+                  <QuizPage />
                 </ProtectedRoute>
               }
             />
