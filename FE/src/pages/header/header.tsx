@@ -8,6 +8,7 @@ import {
 } from "../../service/service";
 import { CloseOutlined, SearchOutlined } from "@ant-design/icons";
 import "./styles.css";
+import { Link } from "@mui/material";
 
 export default function Header({ onSearchChange }: any) {
   const navigate = useNavigate();
@@ -65,19 +66,54 @@ export default function Header({ onSearchChange }: any) {
     <nav>
       <div className="container">
         <div className="nav-container">
-          <div className="logo">L.I.V.E</div>
+          <div
+            className="logo"
+            onClick={() => {
+              navigate("/");
+            }}
+          >
+            L.I.V.E
+          </div>
           <ul className="nav-links" id="navLinks">
             <li>
-              <a href="/">Home</a>
+              <Link
+                className="cursor-pointer"
+                onClick={() => {
+                  navigate("/");
+                }}
+              >
+                Home
+              </Link>
             </li>
             <li>
-              <a href="modules">Modules</a>
+              <Link
+                className="cursor-pointer"
+                onClick={() => {
+                  navigate("modules");
+                }}
+              >
+                Modules
+              </Link>
             </li>
             <li>
-              <a href="#progress">Progress</a>
+              <Link
+                className="cursor-pointer"
+                onClick={() => {
+                  navigate("progress");
+                }}
+              >
+                Progress
+              </Link>
             </li>
             <li>
-              <a href="#about">About</a>
+              <Link
+                className="cursor-pointer"
+                onClick={() => {
+                  navigate("about");
+                }}
+              >
+                About
+              </Link>
             </li>
           </ul>
           <button className="mobile-menu" id="mobileMenu">

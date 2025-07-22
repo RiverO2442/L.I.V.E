@@ -12,6 +12,8 @@ import ProtectedRoute from "./utility/ProtectedRoute";
 import ModulesPage from "./pages/module/modules";
 import HealthyEatingModule from "./pages/module/detail/heathy";
 import QuizPage from "./pages/quiz/quiz";
+import ProgressPage from "./pages/progress/progress";
+import AboutPage from "./about/about";
 
 const App: React.FC = () => {
   const [headerParams, setHeaderParams] = useState({
@@ -61,6 +63,14 @@ const App: React.FC = () => {
               }
             />
             <Route
+              path="/progress"
+              element={
+                <ProtectedRoute authenticated={Authentication()}>
+                  <ProgressPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/"
               element={
                 <ProtectedRoute authenticated={Authentication()}>
@@ -73,6 +83,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute authenticated={Authentication()}>
                   <HealthyEatingModule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <ProtectedRoute authenticated={Authentication()}>
+                  <AboutPage />
                 </ProtectedRoute>
               }
             />
