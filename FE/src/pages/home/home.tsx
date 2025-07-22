@@ -79,30 +79,14 @@ const HomePage: React.FC = () => {
     <div>
       <main>
         <div className="container">
-          <div className="page-title">
-            <h1>Your Learning Modules</h1>
+          <section className="hero">
+            <h1>Welcome to Your Health Journey</h1>
             <p>
-              Master diabetes self-management through interactive learning
-              experiences designed just for you.
+              Learn, Improve, Visualise, and Empower yourself with comprehensive
+              diabetes education tailored just for you.
             </p>
-          </div>
-
-          <div className="stats-summary">
-            <div className="stats-row">
-              <div className="stat-item">
-                <span className="stat-number">2</span>
-                <div className="stat-label">Completed Modules</div>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">55%</span>
-                <div className="stat-label">Overall Progress</div>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">12</span>
-                <div className="stat-label">Hours Learning</div>
-              </div>
-            </div>
-          </div>
+            <button className="cta-button">Start Learning</button>
+          </section>
           <div className="modules-grid">
             {[
               {

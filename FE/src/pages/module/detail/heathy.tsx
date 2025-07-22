@@ -1,7 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "./styles.css";
+import BasicModal from "../../../utility/modal";
+import ReusableModal from "../../../utility/modal";
+import QuizPage from "../../quiz/quiz";
 
 const HealthyEatingModule: React.FC = () => {
+  const [modalOpen, setModalOpen] = useState(false);
   useEffect(() => {
     const progressFill = document.querySelector(
       ".progress-fill"
@@ -81,7 +85,9 @@ const HealthyEatingModule: React.FC = () => {
           </div>
         </div>
 
-        <button className="quiz-button">Take Quiz 📝</button>
+        <button className="quiz-button" onClick={() => setModalOpen(true)}>
+          Take Quiz 📝
+        </button>
       </div>
 
       <div className="info-card">
@@ -111,6 +117,9 @@ const HealthyEatingModule: React.FC = () => {
           </div>
         </div>
       </div>
+      <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <QuizPage />
+      </ReusableModal>
     </div>
   );
 };

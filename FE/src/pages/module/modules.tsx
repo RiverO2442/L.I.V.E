@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
 import "./styles.css";
+import { useNavigate } from "react-router-dom";
 
 const ModulesPage: React.FC = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     const navLinks = document.getElementById("navLinks");
     const mobileMenu = document.getElementById("mobileMenu");
@@ -147,7 +149,12 @@ const ModulesPage: React.FC = () => {
                   ></div>
                 </div>
               </div>
-              <button className={`module-button ${mod.buttonClass}`}>
+              <button
+                onClick={() => {
+                  navigate("id");
+                }}
+                className={`module-button ${mod.buttonClass}`}
+              >
                 {mod.button}
               </button>
             </div>
