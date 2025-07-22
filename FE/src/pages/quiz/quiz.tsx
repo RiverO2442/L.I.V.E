@@ -98,7 +98,7 @@ const QuizPage: React.FC = () => {
   const passed = percentage >= 70;
 
   return (
-    <div className="quiz-container w-[100vw] min-h-[1000px] flex items-center justify-center">
+    <div className="quiz-container absolute top-0 left-0 w-[100vw] min-h-[1000px] flex items-center justify-center">
       <div className="quiz-card">
         {showSummary ? (
           <div className="summary-screen">
