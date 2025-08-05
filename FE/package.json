@@ -19,6 +19,7 @@
     "@tailwindcss/vite": "^4.0.7",
     "antd": "^5.24.3",
     "axios": "^1.8.2",
+    "lucide-react": "^0.536.0",
     "material-ui": "^0.20.2",
     "mui": "^0.0.1",
     "react": "^19.0.0",

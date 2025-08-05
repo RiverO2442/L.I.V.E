@@ -6,14 +6,17 @@ import Footer from "./pages/footer/footer";
 import Header from "./pages/header/header";
 import SignIn from "./pages/login/login";
 import HomePage from "./pages/home/home";
-import AudioDetail from "./pages/media/media-detail/audio-detail";
 import Register from "./pages/register/register";
 import ProtectedRoute from "./utility/ProtectedRoute";
 import ModulesPage from "./pages/module/modules";
-import HealthyEatingModule from "./pages/module/detail/heathy";
+import HealthyEatingModule from "./pages/module/eating/heathy";
 import QuizPage from "./pages/quiz/quiz";
 import ProgressPage from "./pages/progress/progress";
 import AboutPage from "./about/about";
+import PhysicalActivityModule from "./pages/module/activity/heathy";
+import RecognisingSymptomsModule from "./pages/module/symptoms/heathy";
+import BloodGlucoseMonitoring from "./pages/module/glucose/heathy";
+import RecognisingSymptoms from "./pages/module/symptoms/heathy";
 
 const App: React.FC = () => {
   const [headerParams, setHeaderParams] = useState({
@@ -66,7 +69,7 @@ const App: React.FC = () => {
               path="/progress"
               element={
                 <ProtectedRoute authenticated={Authentication()}>
-                  <ProgressPage />
+                  <RecognisingSymptoms />
                 </ProtectedRoute>
               }
             />
