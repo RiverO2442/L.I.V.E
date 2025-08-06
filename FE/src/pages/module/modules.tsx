@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import "./styles.css";
 import { useNavigate } from "react-router-dom";
+import { navigatePath } from "../../utility/router-config";
 
 const ModulesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -104,6 +105,7 @@ const ModulesPage: React.FC = () => {
               class: "healthy-eating",
               button: "Continue",
               buttonClass: "continue-button",
+              path: navigatePath.eating,
             },
             {
               icon: "🏃‍♀️",
@@ -113,6 +115,7 @@ const ModulesPage: React.FC = () => {
               class: "physical-activity",
               button: "Continue",
               buttonClass: "continue-button",
+              path: navigatePath.activity,
             },
             {
               icon: "📊",
@@ -122,6 +125,7 @@ const ModulesPage: React.FC = () => {
               class: "glucose-monitoring",
               button: "Review",
               buttonClass: "review-button",
+              path: navigatePath.glucose,
             },
             {
               icon: "⚠️",
@@ -131,6 +135,7 @@ const ModulesPage: React.FC = () => {
               class: "symptoms",
               button: "Start",
               buttonClass: "start-button",
+              path: navigatePath.symptom,
             },
           ].map((mod, i) => (
             <div key={i} className={`module-card ${mod.class}`}>
@@ -151,7 +156,7 @@ const ModulesPage: React.FC = () => {
               </div>
               <button
                 onClick={() => {
-                  navigate("id");
+                  navigate(`/${mod.path}`);
                 }}
                 className={`module-button ${mod.buttonClass}`}
               >

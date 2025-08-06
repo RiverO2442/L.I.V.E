@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import { googleLogin, loginUser } from "../../service/service";
 import { googleLogin, loginUser } from "../../service/service";
+import { navigatePath } from "../../utility/router-config";
 
 function Copyright() {
   return (
@@ -32,14 +33,14 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       await loginUser(userEmail, userPassword);
-      navigate("/");
+      navigate(`${navigatePath.home}`);
     } catch (error: any) {
       alert(`${error.response?.data?.message || "Something went wrong."} `);
     }
   };
 
   useEffect(() => {
-    if (localStorage.getItem("token")) navigate("/");
+    if (localStorage.getItem("token")) navigate(`${navigatePath.home}`);
   }, []);
 
   const handleGoogleLogin = () => {

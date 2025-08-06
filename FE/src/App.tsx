@@ -9,14 +9,13 @@ import HomePage from "./pages/home/home";
 import Register from "./pages/register/register";
 import ProtectedRoute from "./utility/ProtectedRoute";
 import ModulesPage from "./pages/module/modules";
-import HealthyEatingModule from "./pages/module/eating/heathy";
+import HealthyEatingModule from "./pages/module/eating";
 import QuizPage from "./pages/quiz/quiz";
 import ProgressPage from "./pages/progress/progress";
 import AboutPage from "./about/about";
-import PhysicalActivityModule from "./pages/module/activity/heathy";
-import RecognisingSymptomsModule from "./pages/module/symptoms/heathy";
-import BloodGlucoseMonitoring from "./pages/module/glucose/heathy";
-import RecognisingSymptoms from "./pages/module/symptoms/heathy";
+import PhysicalActivityModule from "./pages/module/activity";
+import RecognisingSymptoms from "./pages/module/symptoms";
+import { navigatePath } from "./utility/router-config";
 
 const App: React.FC = () => {
   const [headerParams, setHeaderParams] = useState({
@@ -58,7 +57,7 @@ const App: React.FC = () => {
         <div className="flex flex-col bg-white min-h-[1000px]">
           <Routes>
             <Route
-              path="/modules"
+              path={`/${navigatePath.modules}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
                   <ModulesPage />
@@ -66,7 +65,7 @@ const App: React.FC = () => {
               }
             />
             <Route
-              path="/progress"
+              path={`/${navigatePath.symptom}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
                   <RecognisingSymptoms />
@@ -74,15 +73,7 @@ const App: React.FC = () => {
               }
             />
             <Route
-              path="/"
-              element={
-                <ProtectedRoute authenticated={Authentication()}>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/modules/:id"
+              path={`/${navigatePath.eating}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
                   <HealthyEatingModule />
@@ -90,23 +81,47 @@ const App: React.FC = () => {
               }
             />
             <Route
-              path="/about"
+              path={`/${navigatePath.activity}`}
+              element={
+                <ProtectedRoute authenticated={Authentication()}>
+                  <PhysicalActivityModule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={`/${navigatePath.glucose}`}
+              element={
+                <ProtectedRoute authenticated={Authentication()}>
+                  <PhysicalActivityModule />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={`/${navigatePath.progress}`}
+              element={
+                <ProtectedRoute authenticated={Authentication()}>
+                  <ProgressPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={`/${navigatePath.about}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
                   <AboutPage />
                 </ProtectedRoute>
               }
             />
+            <Route path={`/${navigatePath.login}`} element={<SignIn />} />
+            <Route path={`/${navigatePath.logup}`} element={<Register />} />
             <Route
-              path="/quiz/"
+              path={`/${navigatePath.home}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
-                  <QuizPage />
+                  <HomePage />
                 </ProtectedRoute>
               }
             />
-            <Route path="/login" element={<SignIn />} />
-            <Route path="/logup" element={<Register />} />
           </Routes>
         </div>
         <Footer />

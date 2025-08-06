@@ -9,6 +9,7 @@ import {
 import { CloseOutlined, SearchOutlined } from "@ant-design/icons";
 import "./styles.css";
 import { Link } from "@mui/material";
+import { navigatePath } from "../../utility/router-config";
 
 export default function Header({ onSearchChange }: any) {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ export default function Header({ onSearchChange }: any) {
           <div
             className="logo"
             onClick={() => {
-              navigate("/");
+              navigate(`${navigatePath.home}`);
             }}
           >
             L.I.V.E
@@ -79,7 +80,7 @@ export default function Header({ onSearchChange }: any) {
               <Link
                 className="cursor-pointer"
                 onClick={() => {
-                  navigate("/");
+                  navigate(`${navigatePath.home}`);
                 }}
               >
                 Home
