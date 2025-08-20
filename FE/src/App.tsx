@@ -8,14 +8,14 @@ import SignIn from "./pages/login/login";
 import HomePage from "./pages/home/home";
 import Register from "./pages/register/register";
 import ProtectedRoute from "./utility/ProtectedRoute";
-import ModulesPage from "./pages/module/modules";
+import ModulesPage from "./pages/module";
 import HealthyEatingModule from "./pages/module/eating";
-import QuizPage from "./pages/quiz/quiz";
 import ProgressPage from "./pages/progress/progress";
 import AboutPage from "./about/about";
 import PhysicalActivityModule from "./pages/module/activity";
 import RecognisingSymptoms from "./pages/module/symptoms";
 import { navigatePath } from "./utility/router-config";
+import BloodGlucoseMonitoring from "./pages/module/glucose";
 
 const App: React.FC = () => {
   const [headerParams, setHeaderParams] = useState({
@@ -92,7 +92,7 @@ const App: React.FC = () => {
               path={`/${navigatePath.glucose}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
-                  <PhysicalActivityModule />
+                  <BloodGlucoseMonitoring />
                 </ProtectedRoute>
               }
             />

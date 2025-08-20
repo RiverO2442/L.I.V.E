@@ -11,11 +11,14 @@ import {
   Coffee,
   Utensils,
 } from "lucide-react";
+import ReusableModal from "../../../utility/modal";
+import QuizPage from "../../quiz/quiz";
 
 const BloodGlucoseMonitoring = () => {
   const [currentQuiz, setCurrentQuiz] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const quizQuestions = [
     {
@@ -416,94 +419,12 @@ const BloodGlucoseMonitoring = () => {
                   Knowledge Check
                 </h2>
               </div>
-
-              {!showResults ? (
-                <div className="space-y-6">
-                  {quizQuestions.map((question, index) => (
-                    <div
-                      key={question.id}
-                      className="border border-gray-200 rounded-lg p-6"
-                    >
-                      <h3 className="font-medium text-gray-800 mb-4">
-                        {index + 1}. {question.question}
-                      </h3>
-                      <div className="space-y-2">
-                        {question.options.map((option, optionIndex) => (
-                          <label
-                            key={optionIndex}
-                            className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
-                          >
-                            <input
-                              type="radio"
-                              name={`question-${question.id}`}
-                              value={optionIndex}
-                              onChange={() =>
-                                handleQuizAnswer(question.id, optionIndex)
-                              }
-                              className="text-teal-600 focus:ring-teal-500"
-                            />
-                            <span className="text-gray-700">{option}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-
-                  <button
-                    onClick={submitQuiz}
-                    disabled={
-                      Object.keys(quizAnswers).length < quizQuestions.length
-                    }
-                    className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-teal-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
-                  >
-                    Submit Quiz
-                  </button>
-                </div>
-              ) : (
-                <div className="text-center space-y-6">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full text-white text-3xl">
-                    🎉
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                      Quiz Complete!
-                    </h3>
-                    <p className="text-lg text-gray-600">
-                      You scored {calculateScore()} out of{" "}
-                      {quizQuestions.length}
-                    </p>
-                  </div>
-
-                  <div className="space-y-4 text-left max-w-2xl mx-auto">
-                    {quizQuestions.map((question, index) => (
-                      <div
-                        key={question.id}
-                        className="bg-gray-50 rounded-lg p-4"
-                      >
-                        <h4 className="font-medium text-gray-800 mb-2">
-                          Question {index + 1}:{" "}
-                          {quizAnswers[question.id] === question.correct
-                            ? "✅"
-                            : "❌"}
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {question.explanation}
-                        </p>
-                        <p className="text-xs text-teal-600">
-                          Correct answer: {question.options[question.correct]}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={resetQuiz}
-                    className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-teal-700 hover:to-cyan-700 transition-all duration-200 transform hover:scale-105"
-                  >
-                    Retake Quiz
-                  </button>
-                </div>
-              )}
+              <button
+                className="quiz-button"
+                onClick={() => setModalOpen(true)}
+              >
+                Take Quiz 📝
+              </button>
             </section>
           </div>
 
@@ -566,6 +487,13 @@ const BloodGlucoseMonitoring = () => {
           </div>
         </div>
       </div>
+      <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <QuizPage
+          onClose={() => {
+            setModalOpen(false);
+          }}
+        />
+      </ReusableModal>
     </div>
   );
 };

@@ -60,7 +60,7 @@ const questions: Question[] = [
   },
 ];
 
-const QuizPage: React.FC = () => {
+const QuizPage = ({ onClose }: any) => {
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
@@ -121,10 +121,7 @@ const QuizPage: React.FC = () => {
               <button className="summary-btn retake-btn" onClick={handleRetake}>
                 Retake Quiz
               </button>
-              <button
-                className="summary-btn back-btn"
-                onClick={() => alert("Back to module")}
-              >
+              <button className="summary-btn back-btn" onClick={onClose}>
                 Back to Module
               </button>
             </div>

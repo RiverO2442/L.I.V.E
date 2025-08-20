@@ -5,7 +5,7 @@ export enum navigatePath {
   progress = "progress",
   modules = "modules",
   eating = "eating",
-  home = "home",
+  home = "",
   login = "login",
   about = "about",
   logup = "logup",

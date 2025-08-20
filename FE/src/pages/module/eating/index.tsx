@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import "./styles.css";
-import BasicModal from "../../../utility/modal";
 import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
 
@@ -118,7 +117,11 @@ const HealthyEatingModule: React.FC = () => {
         </div>
       </div>
       <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <QuizPage />
+        <QuizPage
+          onClose={() => {
+            setModalOpen(false);
+          }}
+        />
       </ReusableModal>
     </div>
   );

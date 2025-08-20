@@ -9,12 +9,15 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
+import ReusableModal from "../../../utility/modal";
+import QuizPage from "../../quiz/quiz";
 
 const PhysicalActivityModule = () => {
   const [currentQuiz, setCurrentQuiz] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [visibleSections, setVisibleSections] = useState(new Set());
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Intersection Observer for scroll animations
   useEffect(() => {
@@ -544,95 +547,9 @@ const PhysicalActivityModule = () => {
                 Knowledge Check
               </h2>
             </div>
-
-            {!showResults ? (
-              <div className="space-y-6">
-                {quizQuestions.map((question, index) => (
-                  <div
-                    key={question.id}
-                    className="border border-gray-200 rounded-xl p-6 hover:border-sky-300 transition-colors"
-                  >
-                    <h3 className="font-semibold text-gray-800 mb-4">
-                      {index + 1}. {question.question}
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-3">
-                      {question.options.map((option, optionIndex) => (
-                        <label
-                          key={optionIndex}
-                          className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-3 transition-colors"
-                        >
-                          <input
-                            type="radio"
-                            name={`question-${question.id}`}
-                            value={optionIndex}
-                            onChange={() =>
-                              handleQuizAnswer(question.id, optionIndex)
-                            }
-                            className="text-sky-500 focus:ring-sky-400"
-                          />
-                          <span className="text-gray-700">{option}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="text-center">
-                  <button
-                    onClick={submitQuiz}
-                    disabled={
-                      Object.keys(quizAnswers).length < quizQuestions.length
-                    }
-                    className="bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-semibold py-4 px-8 rounded-xl hover:from-sky-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg"
-                  >
-                    Submit Quiz
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center space-y-6">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full text-white text-3xl">
-                  🎉
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                    Great Job!
-                  </h3>
-                  <p className="text-lg text-gray-600">
-                    You scored {calculateScore()} out of {quizQuestions.length}
-                  </p>
-                </div>
-
-                <div className="space-y-4 text-left max-w-3xl mx-auto">
-                  {quizQuestions.map((question, index) => (
-                    <div
-                      key={question.id}
-                      className="bg-gray-50 rounded-lg p-4"
-                    >
-                      <h4 className="font-medium text-gray-800 mb-2">
-                        Question {index + 1}:{" "}
-                        {quizAnswers[question.id] === question.correct
-                          ? "✅"
-                          : "❌"}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {question.explanation}
-                      </p>
-                      <p className="text-xs text-sky-600 font-medium">
-                        Correct answer: {question.options[question.correct]}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={resetQuiz}
-                  className="bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-semibold py-3 px-6 rounded-xl hover:from-sky-600 hover:to-indigo-600 transition-all duration-300 transform hover:scale-105"
-                >
-                  Retake Quiz
-                </button>
-              </div>
-            )}
+            <button className="quiz-button" onClick={() => setModalOpen(true)}>
+              Take Quiz 📝
+            </button>
           </div>
         </section>
 
@@ -655,6 +572,13 @@ const PhysicalActivityModule = () => {
           </p>
         </section>
       </div>
+      <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <QuizPage
+          onClose={() => {
+            setModalOpen(false);
+          }}
+        />
+      </ReusableModal>
     </div>
   );
 };

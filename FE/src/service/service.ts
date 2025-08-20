@@ -1,126 +1,124 @@
-import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
+type LoginResponse = {
+  user: { id: string; name: string; email: string };
+  accessToken: string;
+  expiresIn: string; // e.g. "15m"
+};
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+let accessToken: string | null = null;
+let refreshInFlight: Promise<string | null> | null = null;
 
-const token = localStorage.getItem("token");
-if (token) {
-  apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+function setAccessToken(token: string | null) {
+  accessToken = token;
+  if (token) localStorage.setItem("accessToken", token);
+  else localStorage.removeItem("accessToken");
 }
 
-// Register User
-export const registerUser = async (
-  username: string,
-  email: string,
-  password: string
-) => {
+export function getAccessToken() {
+  if (!accessToken) {
+    accessToken = localStorage.getItem("accessToken");
+  }
+  return accessToken;
+}
+
+function parseJwtExp(token: string): number | null {
   try {
-    return await apiClient.post("/register", {
-      username: username.toLowerCase(),
-      email: email.toLowerCase(),
-      password,
+    const [, payload] = token.split(".");
+    const json = JSON.parse(atob(payload));
+    return typeof json.exp === "number" ? json.exp : null; // seconds since epoch
+  } catch {
+    return null;
+  }
+}
+
+async function tryRefresh(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight; // de-dupe
+  refreshInFlight = fetch(`${API_URL}/api/auth/refresh`, {
+    method: "POST",
+    credentials: "include", // send httpOnly cookie
+  })
+    .then(async (res) => {
+      if (!res.ok) throw new Error("refresh-failed");
+      const data = await res.json();
+      setAccessToken(data.accessToken);
+      return data.accessToken as string;
+    })
+    .catch(() => {
+      setAccessToken(null);
+      return null;
+    })
+    .finally(() => {
+      refreshInFlight = null;
     });
-  } catch (error) {
-    throw error;
-  }
-};
+  return refreshInFlight;
+}
 
-// Login User
-export const loginUser = async (email: string, password: string) => {
-  try {
-    const response = await apiClient.post("/login", {
-      email: email.toLowerCase(),
-      password,
-    });
+export async function apiFetch(input: string, init: RequestInit = {}) {
+  // attach access token if present
+  const token = getAccessToken();
+  const headers = new Headers(init.headers || {});
+  if (token) headers.set("Authorization", `Bearer ${token}`);
 
-    const { token } = response.data;
-    if (token) {
-      localStorage.setItem("token", token);
-      apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    }
+  const res = await fetch(`${API_URL}${input}`, {
+    ...init,
+    headers,
+    credentials: "include", // so refresh endpoint works with cookies
+  });
 
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
+  if (res.status !== 401) return res;
 
-// Google Login
-export const googleLogin = async () => {
-  window.location.href = `${API_BASE_URL}/auth/login`;
-};
+  // If unauthorized, attempt refresh once and retry original request
+  const newToken = await tryRefresh();
+  if (!newToken) return res; // still 401 -> bubble up
 
-// Fetch Recent Searches
-export const fetchRecentSearches = async () => {
-  try {
-    return await apiClient.get("/recent_searches");
-  } catch (error) {
-    throw error;
-  }
-};
+  const retryHeaders = new Headers(init.headers || {});
+  retryHeaders.set("Authorization", `Bearer ${newToken}`);
+  return fetch(`${API_URL}${input}`, {
+    ...init,
+    headers: retryHeaders,
+    credentials: "include",
+  });
+}
 
-// Save Recent Search
-export const saveSearch = async (query: string) => {
-  try {
-    return await apiClient.post("/recent_searches", {
-      query: query.toLowerCase(),
-    });
-  } catch (error) {
-    throw error;
-  }
-};
+// --- High level auth calls ---
+export async function register(name: string, email: string, password: string) {
+  const res = await fetch(`${API_URL}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // set refresh cookie
+    body: JSON.stringify({ name, email, password }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = (await res.json()) as LoginResponse;
+  setAccessToken(data.accessToken);
+  return data.user;
+}
 
-// Delete Recent Search
-export const deleteSearch = async (searchId: number) => {
-  try {
-    return await apiClient.delete(`/recent_searches/${searchId}`);
-  } catch (error) {
-    throw error;
-  }
-};
+export async function login(email: string, password: string) {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = (await res.json()) as LoginResponse;
+  setAccessToken(data.accessToken);
+  return data.user;
+}
 
-export const imageSearch = async (param: any) => {
-  try {
-    return await apiClient.get(
-      `/images?q=${param.query.length > 0 ? param.query : "random"}&page=${
-        param.page
-      }`
-    );
-  } catch (error) {
-    throw error;
-  }
-};
+export async function logout() {
+  await fetch(`${API_URL}/api/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+  setAccessToken(null);
+}
 
-export const imageDetail = async (param: any) => {
-  try {
-    return await apiClient.get(`/images/${param}`);
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const audioSearch = async (param: any) => {
-  try {
-    return await apiClient.get(
-      `/audios?q=${param.query.length > 0 ? param.query : "random"}&page=${
-        param.page
-      }`
-    );
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const audioDetail = async (param: any) => {
-  try {
-    return await apiClient.get(`/audio/${param}`);
-  } catch (error) {
-    throw error;
-  }
-};
+// Example protected calls:
+export async function getMe() {
+  const res = await apiFetch("/api/auth/me");
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}

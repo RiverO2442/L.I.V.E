@@ -1,0 +1,105 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  progresses   UserProgress[]
+  attempts     QuizAttempt[]
+  RefreshToken RefreshToken[]
+}
+
+model Module {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  summary   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lessons    Lesson[]
+  questions  QuizQuestion[]
+  progresses UserProgress[]
+  attempts   QuizAttempt[]
+}
+
+model Lesson {
+  id       String @id @default(uuid())
+  moduleId String
+  title    String
+  order    Int    @default(0)
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([moduleId])
+}
+
+model QuizQuestion {
+  id           String   @id @default(uuid())
+  moduleId     String
+  question     String
+  options      String[]
+  correctIndex Int
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([moduleId])
+}
+
+model UserProgress {
+  id           String   @id @default(uuid())
+  userId       String
+  moduleId     String
+  progress     Int      @default(0)
+  quizAccuracy Int      @default(0)
+  timeSpentMin Int      @default(0)
+  lastAccessed DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@index([userId])
+  @@index([moduleId])
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid())
+  userId    String
+  moduleId  String
+  score     Int
+  total     Int
+  accuracy  Int
+  createdAt DateTime @default(now())
+  answers   Json?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([moduleId])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique // store a hash, not raw token
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

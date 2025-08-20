@@ -10,6 +10,8 @@ import {
   RotateCcw,
   ArrowRight,
 } from "lucide-react";
+import ReusableModal from "../../../utility/modal";
+import QuizPage from "../../quiz/quiz";
 
 const RecognisingSymptoms = () => {
   const [checkedSymptoms, setCheckedSymptoms] = useState(new Set());
@@ -17,6 +19,7 @@ const RecognisingSymptoms = () => {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [visibleSections, setVisibleSections] = useState(new Set());
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Scroll animations
   useEffect(() => {
@@ -205,7 +208,7 @@ const RecognisingSymptoms = () => {
       style={{ backgroundColor: "#FAFAFA" }}
     >
       {/* Progress Indicator */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      {/* <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -222,7 +225,7 @@ const RecognisingSymptoms = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Hero Section */}
       <section
@@ -623,7 +626,10 @@ const RecognisingSymptoms = () => {
                 Scenario Quiz
               </h2>
             </div>
-
+            <button className="quiz-button" onClick={() => setModalOpen(true)}>
+              Take Quiz 📝
+            </button>
+            {/* 
             {!showResults ? (
               <div className="space-y-8">
                 {quizScenarios.map((scenario, index) => (
@@ -714,7 +720,7 @@ const RecognisingSymptoms = () => {
                   Retake Quiz
                 </button>
               </div>
-            )}
+            )} */}
           </div>
         </section>
 
@@ -737,6 +743,13 @@ const RecognisingSymptoms = () => {
           </p>
         </section>
       </div>
+      <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <QuizPage
+          onClose={() => {
+            setModalOpen(false);
+          }}
+        />
+      </ReusableModal>
     </div>
   );
 };

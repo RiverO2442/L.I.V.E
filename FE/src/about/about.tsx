@@ -132,45 +132,9 @@ const AboutPage = () => {
           <h2 className="section-title">Meet the Team</h2>
           <div className="team-grid">
             <div className="team-card">
-              <div className="team-avatar">AD</div>
-              <h3 className="team-name">Alex Developer</h3>
-              <p className="team-title">Lead Developer</p>
-            </div>
-            <div className="team-card">
-              <div
-                className="team-avatar"
-                style={{
-                  background: "linear-gradient(135deg, #ed8936, #f6ad55)",
-                }}
-              >
-                SD
-              </div>
-              <h3 className="team-name">Sam Designer</h3>
-              <p className="team-title">UI/UX Designer</p>
-            </div>
-            <div className="team-card">
-              <div
-                className="team-avatar"
-                style={{
-                  background: "linear-gradient(135deg, #9f7aea, #b794f6)",
-                }}
-              >
-                MH
-              </div>
-              <h3 className="team-name">Dr. Maria Health</h3>
-              <p className="team-title">Health Advisor</p>
-            </div>
-            <div className="team-card">
-              <div
-                className="team-avatar"
-                style={{
-                  background: "linear-gradient(135deg, #e53e3e, #fc8181)",
-                }}
-              >
-                JM
-              </div>
-              <h3 className="team-name">Jordan Manager</h3>
-              <p className="team-title">Project Manager</p>
+              <div className="team-avatar">HN</div>
+              <h3 className="team-name">Hao Nguyen</h3>
+              <p className="team-title">Web Developer</p>
             </div>
           </div>
         </div>
