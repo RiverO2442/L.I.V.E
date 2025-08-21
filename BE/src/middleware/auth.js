@@ -30,7 +30,7 @@ export function requireAuth(req, res, next) {
 }
 
 // ---- Refresh token helpers ----
-function sha256(raw) {
+export function sha256(raw) {
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
 

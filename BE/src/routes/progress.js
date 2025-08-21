@@ -35,10 +35,21 @@ router.post(
       });
       if (!mod) return res.status(404).json({ error: "Module not found" });
 
+      const safeProgress = Math.max(0, Math.min(progress, 100));
+
       const record = await prisma.userProgress.upsert({
         where: { userId_moduleId: { userId, moduleId: mod.id } },
-        update: { progress, timeSpentMin, lastAccessed: new Date() },
-        create: { userId, moduleId: mod.id, progress, timeSpentMin },
+        update: {
+          progress: safeProgress,
+          timeSpentMin: { increment: timeSpentMin },
+          lastAccessed: new Date(),
+        },
+        create: {
+          userId,
+          moduleId: mod.id,
+          progress: safeProgress,
+          timeSpentMin,
+        },
       });
 
       res.json(record);

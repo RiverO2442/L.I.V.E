@@ -6,11 +6,9 @@ import xss from "xss-clean";
 import hpp from "hpp";
 import authRouter from "./routes/auth.js";
 
-import modulesRouter from "./routes/modules.js";
 import quizRouter from "./routes/quiz.js";
 import progressRouter from "./routes/progress.js";
 import cookieParser from "cookie-parser";
-import authRouter from "./routes/auth.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 import rateLimiter from "./middleware/rateLimit.js";
@@ -25,8 +23,8 @@ app.use(rateLimiter);
 app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
-app.use("/api/modules", modulesRouter);
-app.use("/api/quiz", quizRouter);
+app.use("/api/modules", quizRouter);
+// app.use("/api/quiz", quizRouter);
 app.use("/api/progress", progressRouter);
 app.use(
   cors({
