@@ -8,20 +8,34 @@ const prisma = new PrismaClient();
 const router = Router();
 
 /**
- * Helper: find module by id OR slug
+ * Helper: normalize string -> slug
  */
-async function findModuleByIdOrSlug(idOrSlug) {
+function slugify(text) {
+  return text
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]+/g, "")
+    .replace(/--+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
+/**
+ * Helper: find module by id, slug, or slugified title
+ */
+async function findModule(identifier) {
+  const normalized = slugify(identifier);
   return prisma.module.findFirst({
     where: {
-      OR: [{ id: idOrSlug }, { slug: idOrSlug }],
+      OR: [{ id: identifier }, { slug: identifier }, { slug: normalized }],
     },
   });
 }
 
 /**
  * Validation schema for quiz submission
- * Body shape:
- * { answers: [{ questionId: string, selectedIndex: number }] }
  */
 const submissionSchema = Joi.object({
   answers: Joi.array()
@@ -33,25 +47,26 @@ const submissionSchema = Joi.object({
     )
     .min(1)
     .required(),
+  startTime: Joi.date().required(), // 👈 new: front-end must send
 });
 
 /**
  * GET /api/modules/:idOrSlug/quiz
- * Return quiz questions for a module (WITHOUT correctIndex)
+ * Return quiz questions for a module (with feedback, but without correctIndex)
  */
 router.get("/:idOrSlug/quiz", async (req, res, next) => {
   try {
-    const mod = await findModuleByIdOrSlug(req.params.idOrSlug);
+    const mod = await findModule(req.params.idOrSlug);
     if (!mod) return res.status(404).json({ error: "Module not found" });
 
     const questions = await prisma.quizQuestion.findMany({
       where: { moduleId: mod.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: { id: "asc" },
       select: {
         id: true,
         question: true,
-        options: true, // assumed string[]
-        // Do NOT expose correctIndex here
+        options: true,
+        feedback: true,
       },
     });
 
@@ -67,7 +82,6 @@ router.get("/:idOrSlug/quiz", async (req, res, next) => {
 /**
  * POST /api/modules/:idOrSlug/quiz/submit
  * Grade submission, store attempt, and update progress
- * Requires auth (user from requireAuth)
  */
 router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
   try {
@@ -80,35 +94,53 @@ router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
         .json({ error: "Invalid payload", details: error.details });
     }
 
-    const mod = await findModuleByIdOrSlug(req.params.idOrSlug);
+    const mod = await findModule(req.params.idOrSlug);
     if (!mod) return res.status(404).json({ error: "Module not found" });
 
-    // Load all questions (with correctIndex for grading)
+    // Get all questions
     const questions = await prisma.quizQuestion.findMany({
       where: { moduleId: mod.id },
-      select: { id: true, correctIndex: true },
+      select: { id: true, correctIndex: true, feedback: true },
     });
-
     if (questions.length === 0) {
       return res.status(400).json({ error: "No questions for this module" });
     }
 
-    // Build correct answer map
-    const correctMap = new Map(questions.map((q) => [q.id, q.correctIndex]));
+    // Build answer map
+    const correctMap = new Map(
+      questions.map((q) => [
+        q.id,
+        { correctIndex: q.correctIndex, feedback: q.feedback },
+      ])
+    );
 
-    // Grade
+    // Grade answers
     let correctCount = 0;
-    for (const a of value.answers) {
-      const expected = correctMap.get(a.questionId);
-      if (typeof expected === "number" && expected === a.selectedIndex) {
-        correctCount++;
-      }
-    }
+    const results = value.answers.map((a) => {
+      const entry = correctMap.get(a.questionId);
+      if (!entry) return { ...a, correct: false, feedback: "Invalid question" };
+      const correct = entry.correctIndex === a.selectedIndex;
+      if (correct) correctCount++;
+      return {
+        questionId: a.questionId,
+        selectedIndex: a.selectedIndex,
+        correct,
+        feedback: entry.feedback,
+      };
+    });
 
     const total = questions.length;
     const accuracy = Math.round((correctCount / total) * 100);
 
-    // Persist attempt
+    // Time spent
+    const startTime = new Date(value.startTime);
+    const endTime = new Date();
+    const durationMinutes = Math.max(
+      1,
+      Math.round((endTime - startTime) / 60000)
+    );
+
+    // Save attempt
     const attempt = await prisma.quizAttempt.create({
       data: {
         userId: req.user.id,
@@ -116,7 +148,7 @@ router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
         score: correctCount,
         total,
         accuracy,
-        answers: value.answers, // JSON column
+        answers: value.answers,
       },
       select: {
         id: true,
@@ -127,38 +159,39 @@ router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
       },
     });
 
-    // Update or create user progress
+    // Count progress (attempts / total quizzes)
+    const totalQuizzes = await prisma.quizQuestion.count({
+      where: { moduleId: mod.id },
+    });
+    const attemptsDone = await prisma.quizAttempt.count({
+      where: { userId: req.user.id, moduleId: mod.id },
+    });
+    const progressPercent = Math.min(
+      100,
+      Math.round((attemptsDone / totalQuizzes) * 100)
+    );
+
+    // Update progress
     const progress = await prisma.userProgress.upsert({
-      where: {
-        userId_moduleId: { userId: req.user.id, moduleId: mod.id },
-      },
+      where: { userId_moduleId: { userId: req.user.id, moduleId: mod.id } },
       update: {
         quizAccuracy: accuracy,
         lastAccessed: new Date(),
+        timeSpentMin: { increment: durationMinutes },
+        progress: progressPercent,
       },
       create: {
         userId: req.user.id,
         moduleId: mod.id,
-        progress: 0, // keep or update elsewhere
+        progress: progressPercent,
         quizAccuracy: accuracy,
-        timeSpentMin: 0,
-      },
-      select: {
-        userId: true,
-        moduleId: true,
-        progress: true,
-        quizAccuracy: true,
-        timeSpentMin: true,
-        lastAccessed: true,
+        timeSpentMin: durationMinutes,
       },
     });
 
     res.json({
-      result: {
-        correct: correctCount,
-        total,
-        accuracy,
-      },
+      result: { correct: correctCount, total, accuracy },
+      results,
       attempt,
       progress,
     });
@@ -169,11 +202,11 @@ router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
 
 /**
  * GET /api/modules/:idOrSlug/quiz/attempts
- * Return current user's attempts for a module
+ * Return attempts for a user + module
  */
 router.get("/:idOrSlug/quiz/attempts", requireAuth, async (req, res, next) => {
   try {
-    const mod = await findModuleByIdOrSlug(req.params.idOrSlug);
+    const mod = await findModule(req.params.idOrSlug);
     if (!mod) return res.status(404).json({ error: "Module not found" });
 
     const attempts = await prisma.quizAttempt.findMany({

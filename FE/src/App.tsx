@@ -4,7 +4,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import "./App.css";
 import Footer from "./pages/footer/footer";
 import Header from "./pages/header/header";
-import SignIn from "./pages/login/login";
+import SignIn from "./pages/login/login-register";
 import HomePage from "./pages/home/home";
 import Register from "./pages/register/register";
 import ProtectedRoute from "./utility/ProtectedRoute";
@@ -56,14 +56,14 @@ const App: React.FC = () => {
         <Header onSearchChange={checkHeaderValue} />
         <div className="flex flex-col bg-white min-h-[1000px]">
           <Routes>
-            <Route
+            {/* <Route
               path={`/${navigatePath.modules}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
                   <ModulesPage />
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path={`/${navigatePath.symptom}`}
               element={
@@ -113,12 +113,12 @@ const App: React.FC = () => {
               }
             />
             <Route path={`/${navigatePath.login}`} element={<SignIn />} />
-            <Route path={`/${navigatePath.logup}`} element={<Register />} />
+            {/* <Route path={`/${navigatePath.logup}`} element={<Register />} /> */}
             <Route
               path={`/${navigatePath.home}`}
               element={
                 <ProtectedRoute authenticated={Authentication()}>
-                  <HomePage />
+                  <ModulesPage />
                 </ProtectedRoute>
               }
             />

@@ -7,6 +7,7 @@ import hpp from "hpp";
 import authRouter from "./routes/auth.js";
 
 import quizRouter from "./routes/quiz.js";
+import modulesRouter from "./routes/modules.js";
 import progressRouter from "./routes/progress.js";
 import cookieParser from "cookie-parser";
 import notFound from "./middleware/notFound.js";
@@ -14,6 +15,12 @@ import errorHandler from "./middleware/errorHandler.js";
 import rateLimiter from "./middleware/rateLimit.js";
 
 const app = express();
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(helmet());
 app.use(express.json({ limit: "100kb" }));
 app.use(xss());
@@ -23,15 +30,9 @@ app.use(rateLimiter);
 app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
-app.use("/api/modules", quizRouter);
-// app.use("/api/quiz", quizRouter);
+app.use("/api/modules", modulesRouter);
+app.use("/api/quiz", quizRouter);
 app.use("/api/progress", progressRouter);
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"],
-    credentials: true,
-  })
-);
 app.use(notFound);
 app.use(errorHandler);
 

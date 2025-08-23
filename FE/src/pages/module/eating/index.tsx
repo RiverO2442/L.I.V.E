@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./styles.css";
 import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
+import { ModuleService } from "../../../service/service";
 
 const HealthyEatingModule: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -28,6 +29,16 @@ const HealthyEatingModule: React.FC = () => {
         playButton.style.transform = "scale(1.1)";
       }, 150);
     });
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const ret = ModuleService.getBySlug("healthy-eating");
+      } catch (err) {
+        console.error("Failed to load module:", err);
+      }
+    })();
   }, []);
 
   return (
@@ -118,6 +129,7 @@ const HealthyEatingModule: React.FC = () => {
       </div>
       <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
         <QuizPage
+          slug="healthy-eating" // 👈 pass module slug
           onClose={() => {
             setModalOpen(false);
           }}

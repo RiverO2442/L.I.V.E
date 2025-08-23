@@ -53,6 +53,7 @@ model QuizQuestion {
   correctIndex Int
   createdAt    DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  feedback     String?   @db.Text 
 
   module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 

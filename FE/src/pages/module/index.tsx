@@ -1,49 +1,81 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "./styles.css";
 import { useNavigate } from "react-router-dom";
 import { navigatePath } from "../../utility/router-config";
+import { ModuleService, ProgressService } from "../../service/service";
+
+type Module = {
+  id: string; // e.g. "healthy-eating"
+  title: string;
+  slug: string;
+  summary: string;
+  lessons: { id: string; title: string }[];
+};
+
+type Progress = {
+  moduleId: string;
+  progress: number;
+  timeSpentMin: number;
+};
 
 const ModulesPage: React.FC = () => {
   const navigate = useNavigate();
+  const [modules, setModules] = useState<Module[]>([]);
+  const [progress, setProgress] = useState<Record<string, Progress>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Map ids → icons, UI classes, navigate paths
+  const moduleUI: Record<
+    string,
+    { icon: string; class: string; path: string }
+  > = {
+    "healthy-eating": {
+      icon: "🥗",
+      class: "healthy-eating",
+      path: navigatePath.eating,
+    },
+    "physical-activity": {
+      icon: "🏃‍♀️",
+      class: "physical-activity",
+      path: navigatePath.activity,
+    },
+    "blood-glucose": {
+      icon: "📊",
+      class: "glucose-monitoring",
+      path: navigatePath.glucose,
+    },
+    "recognising-symptoms": {
+      icon: "⚠️",
+      class: "symptoms",
+      path: navigatePath.symptom,
+    },
+  };
+
   useEffect(() => {
-    const navLinks = document.getElementById("navLinks");
-    const mobileMenu = document.getElementById("mobileMenu");
-    const moduleButtons =
-      document.querySelectorAll<HTMLButtonElement>(".module-button");
+    (async () => {
+      try {
+        const [mods, prog] = await Promise.all([
+          ModuleService.list(),
+          ProgressService.myProgress(),
+        ]);
 
-    mobileMenu?.addEventListener("click", function () {
-      navLinks?.classList.toggle("active");
-      const rotation = navLinks?.classList.contains("active")
-        ? "rotate(90deg)"
-        : "rotate(0deg)";
-      (this as HTMLElement).style.transform = rotation;
-    });
+        setModules(mods);
 
-    moduleButtons.forEach((button) => {
-      button.addEventListener("click", function () {
-        this.style.transform = "scale(0.95)";
-        setTimeout(() => {
-          this.style.transform = "";
-        }, 150);
+        const progMap: Record<string, Progress> = {};
+        prog.forEach((p: any) => {
+          progMap[p.moduleId] = p;
+        });
+        setProgress(progMap);
+      } catch (err) {
+        console.error("Failed to load modules:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-        const ripple = document.createElement("span");
-        ripple.style.position = "absolute";
-        ripple.style.borderRadius = "50%";
-        ripple.style.background = "rgba(255,255,255,0.3)";
-        ripple.style.transform = "scale(0)";
-        ripple.style.animation = "ripple 0.6s linear";
-        ripple.style.left = "50%";
-        ripple.style.top = "50%";
-        ripple.style.width = ripple.style.height = "100px";
-        ripple.style.marginLeft = ripple.style.marginTop = "-50px";
-
-        this.appendChild(ripple);
-        setTimeout(() => {
-          ripple.remove();
-        }, 600);
-      });
-    });
-
+  // Ripple + animation
+  useEffect(() => {
     const animateProgressBars = () => {
       const bars = document.querySelectorAll<HTMLElement>(".progress-fill");
       bars.forEach((bar, index) => {
@@ -55,21 +87,18 @@ const ModulesPage: React.FC = () => {
     };
 
     window.addEventListener("load", animateProgressBars);
-
-    const cards = document.querySelectorAll<HTMLElement>(".module-card");
-    cards.forEach((card) => {
-      card.addEventListener("mouseenter", function () {
-        this.style.borderColor = "rgba(52, 152, 219, 0.3)";
-      });
-      card.addEventListener("mouseleave", function () {
-        this.style.borderColor = "rgba(52, 152, 219, 0.1)";
-      });
-    });
-  }, []);
+  }, [modules]);
 
   return (
     <main>
       <div className="container">
+        <section className="hero">
+          <h1>Welcome to Your Health Journey</h1>
+          <p>
+            Learn, Improve, Visualise, and Empower yourself with comprehensive
+            diabetes education tailored just for you.
+          </p>
+        </section>
         <div className="page-title">
           <h1>Your Learning Modules</h1>
           <p>
@@ -77,93 +106,71 @@ const ModulesPage: React.FC = () => {
             experiences designed just for you.
           </p>
         </div>
-
+        {/* Stats (static for now) */}
         <div className="stats-summary">
           <div className="stats-row">
             <div className="stat-item">
-              <span className="stat-number">2</span>
+              <span className="stat-number">0</span>
               <div className="stat-label">Completed Modules</div>
             </div>
             <div className="stat-item">
-              <span className="stat-number">55%</span>
+              <span className="stat-number">0%</span>
               <div className="stat-label">Overall Progress</div>
             </div>
             <div className="stat-item">
-              <span className="stat-number">12</span>
+              <span className="stat-number">0</span>
               <div className="stat-label">Hours Learning</div>
             </div>
           </div>
         </div>
 
         <div className="modules-grid">
-          {[
-            {
-              icon: "🥗",
-              title: "Healthy Eating",
-              desc: "Discover nutritious meal planning, carbohydrate counting, and how different foods affect your blood sugar levels.",
-              progress: 75,
-              class: "healthy-eating",
-              button: "Continue",
-              buttonClass: "continue-button",
-              path: navigatePath.eating,
-            },
-            {
-              icon: "🏃‍♀️",
-              title: "Physical Activity",
-              desc: "Learn safe exercise routines, activity planning strategies, and how physical movement helps manage your diabetes.",
-              progress: 45,
-              class: "physical-activity",
-              button: "Continue",
-              buttonClass: "continue-button",
-              path: navigatePath.activity,
-            },
-            {
-              icon: "📊",
-              title: "Blood Glucose Monitoring",
-              desc: "Master blood sugar testing techniques, understand your readings, and learn to track patterns effectively.",
-              progress: 100,
-              class: "glucose-monitoring",
-              button: "Review",
-              buttonClass: "review-button",
-              path: navigatePath.glucose,
-            },
-            {
-              icon: "⚠️",
-              title: "Recognising Symptoms",
-              desc: "Identify warning signs of complications, understand when to seek medical help, and manage emergency situations.",
-              progress: 0,
-              class: "symptoms",
-              button: "Start",
-              buttonClass: "start-button",
-              path: navigatePath.symptom,
-            },
-          ].map((mod, i) => (
-            <div key={i} className={`module-card ${mod.class}`}>
-              <div className="module-icon">{mod.icon}</div>
-              <h3>{mod.title}</h3>
-              <p>{mod.desc}</p>
-              <div className="progress-container">
-                <div className="progress-label">
-                  <span>Progress</span>
-                  <span className="progress-percentage">{mod.progress}%</span>
+          {loading ? (
+            <p>Loading modules...</p>
+          ) : (
+            modules.map((mod) => {
+              const ui = moduleUI[mod.slug] || {
+                icon: "📘",
+                class: "default",
+                path: `/modules/${mod.slug}`,
+              };
+              const prog = progress[mod.slug];
+              const pct = prog?.progress ?? 0;
+
+              let buttonLabel = "Start";
+              if (pct > 0 && pct < 100) buttonLabel = "Continue";
+              if (pct === 100) buttonLabel = "Review";
+
+              return (
+                <div key={mod.id} className={`module-card ${ui.class}`}>
+                  <div className="module-icon">{ui.icon}</div>
+                  <h3>{mod.title}</h3>
+                  <p>{mod.summary}</p>
+                  <div className="progress-container">
+                    <div className="progress-label">
+                      <span>Progress</span>
+                      <span className="progress-percentage">{pct}%</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div className="progress-fill" data-progress={pct}></div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/${ui.path}`)}
+                    className={`module-button ${
+                      buttonLabel === "Start"
+                        ? "start-button"
+                        : buttonLabel === "Continue"
+                        ? "continue-button"
+                        : "review-button"
+                    }`}
+                  >
+                    {buttonLabel}
+                  </button>
                 </div>
-                <div className="progress-bar">
-                  <div
-                    className="progress-fill"
-                    data-progress={mod.progress}
-                  ></div>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  navigate(`/${mod.path}`);
-                }}
-                className={`module-button ${mod.buttonClass}`}
-              >
-                {mod.button}
-              </button>
-            </div>
-          ))}
+              );
+            })
+          )}
         </div>
       </div>
     </main>

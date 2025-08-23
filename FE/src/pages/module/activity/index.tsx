@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  ChevronRight,
   Heart,
-  Zap,
   Target,
   Clock,
   CheckCircle,
@@ -13,9 +11,6 @@ import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
 
 const PhysicalActivityModule = () => {
-  const [currentQuiz, setCurrentQuiz] = useState(0);
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [showResults, setShowResults] = useState(false);
   const [visibleSections, setVisibleSections] = useState(new Set());
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -37,89 +32,6 @@ const PhysicalActivityModule = () => {
 
     return () => observer.disconnect();
   }, []);
-
-  const quizQuestions = [
-    {
-      id: 1,
-      question:
-        "What's the recommended minimum exercise duration for adults with diabetes?",
-      options: [
-        "15 minutes per day",
-        "30 minutes, 5 days per week",
-        "1 hour every day",
-        "Only on weekends",
-      ],
-      correct: 1,
-      explanation:
-        "The ADA recommends at least 150 minutes of moderate-intensity exercise per week, which equals 30 minutes on 5 days.",
-    },
-    {
-      id: 2,
-      question:
-        "When is the best time to check blood glucose if you're exercising?",
-      options: [
-        "Only after exercise",
-        "Before, during, and after exercise",
-        "Just before exercise",
-        "Blood glucose checking isn't needed",
-      ],
-      correct: 1,
-      explanation:
-        "Monitoring before, during, and after exercise helps prevent dangerous blood sugar fluctuations.",
-    },
-    {
-      id: 3,
-      question:
-        "What should you do if your blood glucose is below 100 mg/dL before exercise?",
-      options: [
-        "Exercise immediately",
-        "Have a small carbohydrate snack first",
-        "Skip exercise that day",
-        "Take insulin",
-      ],
-      correct: 1,
-      explanation:
-        "A small carb snack (15-30g) before exercise can prevent hypoglycemia during activity.",
-    },
-    {
-      id: 4,
-      question:
-        "Which type of exercise is most effective for improving insulin sensitivity?",
-      options: [
-        "Only cardio",
-        "Only strength training",
-        "Combination of cardio and strength training",
-        "Flexibility exercises only",
-      ],
-      correct: 2,
-      explanation:
-        "Research shows that combining aerobic and resistance exercise provides the greatest benefits for glucose control.",
-    },
-  ];
-
-  const handleQuizAnswer = (questionId, answerIndex) => {
-    setQuizAnswers((prev) => ({
-      ...prev,
-      [questionId]: answerIndex,
-    }));
-  };
-
-  const calculateScore = () => {
-    let correct = 0;
-    quizQuestions.forEach((q) => {
-      if (quizAnswers[q.id] === q.correct) correct++;
-    });
-    return correct;
-  };
-
-  const submitQuiz = () => {
-    setShowResults(true);
-  };
-
-  const resetQuiz = () => {
-    setQuizAnswers({});
-    setShowResults(false);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">

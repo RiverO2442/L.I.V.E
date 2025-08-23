@@ -1,101 +1,87 @@
 import React, { useEffect, useState } from "react";
 import "./styles.css";
+import { QuizService } from "../../service/service";
 
 interface Question {
+  id: string;
   question: string;
   options: string[];
-  correct: number;
+  feedback: string;
 }
 
-const questions: Question[] = [
-  {
-    question: "Which type of carbohydrate is best for people with diabetes?",
-    options: [
-      "Simple carbohydrates like white bread and candy",
-      "Complex carbohydrates like whole grains and vegetables",
-      "All carbohydrates should be avoided completely",
-      "Only fruits and fruit juices",
-    ],
-    correct: 1,
-  },
-  {
-    question: "What is the recommended portion size for protein at each meal?",
-    options: [
-      "About the size of your palm",
-      "Half of your plate",
-      "As much as you want",
-      "One small bite",
-    ],
-    correct: 0,
-  },
-  {
-    question: "Which cooking method is healthiest for people with diabetes?",
-    options: [
-      "Deep frying",
-      "Grilling, baking, or steaming",
-      "Pan-frying with lots of oil",
-      "Breading and frying",
-    ],
-    correct: 1,
-  },
-  {
-    question: "How often should people with diabetes eat throughout the day?",
-    options: [
-      "One large meal per day",
-      "Only when feeling hungry",
-      "Regular, balanced meals and snacks",
-      "Skip breakfast to reduce blood sugar",
-    ],
-    correct: 2,
-  },
-  {
-    question: "What should you drink most often when you have diabetes?",
-    options: [
-      "Regular soda and fruit juices",
-      "Water and unsweetened beverages",
-      "Sports drinks for energy",
-      "Diet soda exclusively",
-    ],
-    correct: 1,
-  },
-];
+interface QuizPageProps {
+  slug: string; // 👈 module slug
+  onClose: () => void;
+}
 
-const QuizPage = ({ onClose }: any) => {
+const QuizPage: React.FC<QuizPageProps> = ({ slug, onClose }) => {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
-  const [answers, setAnswers] = useState<{ [key: number]: number }>({});
+  const [answers, setAnswers] = useState<
+    { questionId: string; selectedIndex: number }[]
+  >([]);
   const [showSummary, setShowSummary] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [startTime, setStartTime] = useState<number>(Date.now()); // 👈 track quiz start
 
-  const handleSelect = (index: number) => {
-    setSelected(index);
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await QuizService.getByModuleSlug(slug);
+        setQuestions(data.questions);
+        setStartTime(Date.now()); // reset start when questions load
+      } catch (err) {
+        console.error("Failed to load quiz:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [slug]);
 
-  const handleNext = () => {
-    if (selected !== null) {
-      setAnswers({ ...answers, [current]: selected });
+  const handleNext = async () => {
+    if (selected !== null && questions[current]) {
+      const newAnswers = [
+        ...answers,
+        { questionId: questions[current].id, selectedIndex: selected },
+      ];
+      setAnswers(newAnswers);
       setSelected(null);
+
       if (current + 1 < questions.length) {
         setCurrent(current + 1);
       } else {
+        try {
+          // 👇 send startTime + answers
+          const submission = await QuizService.submit(
+            slug,
+            newAnswers,
+            startTime
+          );
+          setResult(submission.result);
+        } catch (err) {
+          console.error("Failed to submit quiz:", err);
+        }
         setShowSummary(true);
       }
     }
   };
 
+  const handleSelect = (index: number) => {
+    setSelected(index);
+  };
   const handleRetake = () => {
     setCurrent(0);
     setSelected(null);
-    setAnswers({});
+    setAnswers([]);
     setShowSummary(false);
+    setResult(null);
   };
 
-  const score = Object.keys(answers).reduce((acc, key) => {
-    const qIndex = parseInt(key);
-    return answers[qIndex] === questions[qIndex].correct ? acc + 1 : acc;
-  }, 0);
-
-  const percentage = Math.round((score / questions.length) * 100);
-  const passed = percentage >= 70;
+  if (loading) return <div className="quiz-container">Loading quiz...</div>;
+  if (!questions.length)
+    return <div className="quiz-container">No questions available.</div>;
 
   return (
     <div className="quiz-container absolute top-0 left-0 w-[100vw] min-h-[1000px] flex items-center justify-center">
@@ -103,17 +89,22 @@ const QuizPage = ({ onClose }: any) => {
         {showSummary ? (
           <div className="summary-screen">
             <div className="module-header">
-              <div className="module-name">Healthy Eating</div>
+              <div className="module-name">{slug.replace("-", " ")}</div>
               <div className="question-number">Quiz Complete!</div>
             </div>
             <div className="score-display">
-              <div className="score-percentage">{percentage}%</div>
+              <div className="score-percentage">{result?.accuracy ?? 0}%</div>
               <div className="score-raw">
-                You scored {score} out of {questions.length} questions correctly
+                You scored {result?.correct ?? 0} out of {result?.total ?? 0}{" "}
+                questions correctly
               </div>
             </div>
-            <div className={`feedback ${passed ? "pass" : "fail"}`}>
-              {passed
+            <div
+              className={`feedback ${
+                result && result.accuracy >= 70 ? "pass" : "fail"
+              }`}
+            >
+              {result && result.accuracy >= 70
                 ? "🎉 Congratulations! You passed the quiz."
                 : "📚 Please review the material and try again."}
             </div>
@@ -129,7 +120,7 @@ const QuizPage = ({ onClose }: any) => {
         ) : (
           <>
             <div className="module-header">
-              <div className="module-name">Healthy Eating</div>
+              <div className="module-name">{slug.replace("-", " ")}</div>
               <div className="question-number">
                 Question {current + 1} of {questions.length}
               </div>

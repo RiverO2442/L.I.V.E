@@ -1,68 +1,24 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { AutoComplete, Button, Input, Select } from "antd";
 import { useEffect, useState } from "react";
-import {
-  deleteSearch,
-  fetchRecentSearches,
-  saveSearch,
-} from "../../service/service";
-import { CloseOutlined, SearchOutlined } from "@ant-design/icons";
 import "./styles.css";
 import { Link } from "@mui/material";
 import { navigatePath } from "../../utility/router-config";
 
 export default function Header({ onSearchChange }: any) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const onLogo = () => {
-    navigate(`/`);
+  // const location = useLocation();
+  // const [search, setSearch] = useState("");
+  const [verifyLogin, setVerifyLogin] = useState<any>(
+    localStorage.getItem("token") ?? false
+  );
+  const onClickLogin = () => {
+    localStorage.getItem("accessToken") &&
+      localStorage.removeItem("accessToken");
+    navigate("/login");
   };
-  const [search, setSearch] = useState("");
-  const [recentSearch, setRecentSearch] = useState<any>();
-  const handleSaveSearchPromp = async () => {
-    try {
-      (await saveSearch(search)) as any;
-      handleGetSearch();
-    } catch (error: any) {
-      console.log(
-        `${error.response?.data?.message || "Something went wrong."} `
-      );
-    }
-  };
-  const handleDeleteSearchPromp = async (id: any) => {
-    try {
-      (await deleteSearch(id)) as any;
-      handleGetSearch();
-    } catch (error: any) {
-      console.log(
-        `${error.response?.data?.message || "Something went wrong."} `
-      );
-    }
-  };
-  const handleGetSearch = async () => {
-    try {
-      const data = await fetchRecentSearches();
-      if (data?.data?.searches?.length == 0) {
-        setRecentSearch([]);
-      } else
-        setRecentSearch(
-          data?.data?.searches.map((item: any) => {
-            return {
-              key: item.id,
-              value: item.query,
-            };
-          })
-        );
-    } catch (error: any) {
-      console.log(
-        `${error.response?.data?.message || "Something went wrong."} `
-      );
-    }
-  };
-  const verifyLogin = localStorage.getItem("token") ?? false;
   useEffect(() => {
-    handleGetSearch();
-  }, []);
+    setVerifyLogin(localStorage.getItem("accessToken") ?? false);
+  });
   return (
     <nav>
       <div className="container">
@@ -86,7 +42,7 @@ export default function Header({ onSearchChange }: any) {
                 Home
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 className="cursor-pointer"
                 onClick={() => {
@@ -95,7 +51,7 @@ export default function Header({ onSearchChange }: any) {
               >
                 Modules
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link
                 className="cursor-pointer"
@@ -104,6 +60,16 @@ export default function Header({ onSearchChange }: any) {
                 }}
               >
                 Progress
+              </Link>
+            </li>
+            <li className={`${verifyLogin && "hidden"}`}>
+              <Link className="cursor-pointer" onClick={() => onClickLogin()}>
+                {"Login"}
+              </Link>
+            </li>
+            <li className={`${!verifyLogin && "hidden"}`}>
+              <Link className="cursor-pointer" onClick={() => onClickLogin()}>
+                {"Logout"}
               </Link>
             </li>
             <li>

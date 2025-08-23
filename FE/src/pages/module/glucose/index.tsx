@@ -8,16 +8,11 @@ import {
   Target,
   Heart,
   Zap,
-  Coffee,
-  Utensils,
 } from "lucide-react";
 import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
 
 const BloodGlucoseMonitoring = () => {
-  const [currentQuiz, setCurrentQuiz] = useState(0);
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [showResults, setShowResults] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
   const quizQuestions = [
@@ -63,31 +58,6 @@ const BloodGlucoseMonitoring = () => {
         "The 15-15 rule: consume 15g fast-acting carbs, wait 15 minutes, then retest.",
     },
   ];
-
-  const handleQuizAnswer = (questionId, answerIndex) => {
-    setQuizAnswers((prev) => ({
-      ...prev,
-      [questionId]: answerIndex,
-    }));
-  };
-
-  const calculateScore = () => {
-    let correct = 0;
-    quizQuestions.forEach((q) => {
-      if (quizAnswers[q.id] === q.correct) correct++;
-    });
-    return correct;
-  };
-
-  const submitQuiz = () => {
-    setShowResults(true);
-  };
-
-  const resetQuiz = () => {
-    setQuizAnswers({});
-    setShowResults(false);
-    setCurrentQuiz(0);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50">
@@ -489,6 +459,7 @@ const BloodGlucoseMonitoring = () => {
       </div>
       <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
         <QuizPage
+          slug="blood-glucose"
           onClose={() => {
             setModalOpen(false);
           }}
