@@ -9,70 +9,82 @@ interface Question {
   feedback: string;
 }
 
+interface Lesson {
+  id: string;
+  title: string;
+  questions: Question[];
+}
+
 interface QuizPageProps {
   slug: string; // 👈 module slug
+  lessonId: string; // 👈 selected lesson
   onClose: () => void;
 }
 
-const QuizPage: React.FC<QuizPageProps> = ({ slug, onClose }) => {
-  const [questions, setQuestions] = useState<Question[]>([]);
+const QuizPage: React.FC<QuizPageProps> = ({ slug, lessonId, onClose }) => {
+  const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
-  const [current, setCurrent] = useState(0);
+
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<
     { questionId: string; selectedIndex: number }[]
   >([]);
   const [showSummary, setShowSummary] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [startTime, setStartTime] = useState<number>(Date.now()); // 👈 track quiz start
 
   useEffect(() => {
     (async () => {
       try {
         const data = await QuizService.getByModuleSlug(slug);
-        setQuestions(data.questions);
-        setStartTime(Date.now()); // reset start when questions load
+        const lessonData = data.lessons.find((l: Lesson) => l.id === lessonId);
+        setLesson(lessonData || null);
       } catch (err) {
-        console.error("Failed to load quiz:", err);
+        console.error("Failed to load lesson quiz:", err);
       } finally {
         setLoading(false);
       }
     })();
-  }, [slug]);
+  }, [slug, lessonId]);
+
+  const currentQuestion = lesson?.questions[questionIndex];
 
   const handleNext = async () => {
-    if (selected !== null && questions[current]) {
+    if (selected !== null && currentQuestion) {
       const newAnswers = [
         ...answers,
-        { questionId: questions[current].id, selectedIndex: selected },
+        { questionId: currentQuestion.id, selectedIndex: selected },
       ];
       setAnswers(newAnswers);
       setSelected(null);
 
-      if (current + 1 < questions.length) {
-        setCurrent(current + 1);
-      } else {
-        try {
-          // 👇 send startTime + answers
-          const submission = await QuizService.submit(
-            slug,
-            newAnswers,
-            startTime
-          );
-          setResult(submission.result);
-        } catch (err) {
-          console.error("Failed to submit quiz:", err);
-        }
-        setShowSummary(true);
+      // Next question in lesson
+      if (questionIndex + 1 < (lesson?.questions.length || 0)) {
+        setQuestionIndex(questionIndex + 1);
+        return;
       }
+
+      // Finished this lesson
+      try {
+        const submission = await QuizService.submit(
+          slug,
+          newAnswers,
+          Date.now()
+        );
+        setResult(submission.result);
+      } catch (err) {
+        console.error("Failed to submit quiz:", err);
+      }
+      setShowSummary(true);
     }
   };
 
   const handleSelect = (index: number) => {
     setSelected(index);
   };
+
   const handleRetake = () => {
-    setCurrent(0);
+    setQuestionIndex(0);
     setSelected(null);
     setAnswers([]);
     setShowSummary(false);
@@ -80,8 +92,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ slug, onClose }) => {
   };
 
   if (loading) return <div className="quiz-container">Loading quiz...</div>;
-  if (!questions.length)
-    return <div className="quiz-container">No questions available.</div>;
+  if (!lesson) return <div className="quiz-container">Lesson not found.</div>;
 
   return (
     <div className="quiz-container absolute top-0 left-0 w-[100vw] min-h-[1000px] flex items-center justify-center">
@@ -89,8 +100,8 @@ const QuizPage: React.FC<QuizPageProps> = ({ slug, onClose }) => {
         {showSummary ? (
           <div className="summary-screen">
             <div className="module-header">
-              <div className="module-name">{slug.replace("-", " ")}</div>
-              <div className="question-number">Quiz Complete!</div>
+              <div className="module-name">{lesson.title}</div>
+              <div className="question-number">Lesson Complete!</div>
             </div>
             <div className="score-display">
               <div className="score-percentage">{result?.accuracy ?? 0}%</div>
@@ -105,37 +116,39 @@ const QuizPage: React.FC<QuizPageProps> = ({ slug, onClose }) => {
               }`}
             >
               {result && result.accuracy >= 70
-                ? "🎉 Congratulations! You passed the quiz."
-                : "📚 Please review the material and try again."}
+                ? "🎉 Great job on this lesson!"
+                : "📚 Please review the lesson and try again."}
             </div>
             <div className="summary-buttons">
               <button className="summary-btn retake-btn" onClick={handleRetake}>
-                Retake Quiz
+                Retake Lesson Quiz
               </button>
               <button className="summary-btn back-btn" onClick={onClose}>
-                Back to Module
+                Back to Lessons
               </button>
             </div>
           </div>
         ) : (
           <>
             <div className="module-header">
-              <div className="module-name">{slug.replace("-", " ")}</div>
+              <div className="module-name">{lesson.title}</div>
               <div className="question-number">
-                Question {current + 1} of {questions.length}
+                Question {questionIndex + 1} of {lesson.questions.length}
               </div>
             </div>
             <div className="progress-bar">
               <div
                 className="progress-fill"
                 style={{
-                  width: `${((current + 1) / questions.length) * 100}%`,
+                  width: `${
+                    ((questionIndex + 1) / lesson.questions.length) * 100
+                  }%`,
                 }}
               ></div>
             </div>
-            <div className="question-text">{questions[current].question}</div>
+            <div className="question-text">{currentQuestion?.question}</div>
             <div className="options">
-              {questions[current].options.map((opt, index) => (
+              {currentQuestion?.options.map((opt, index) => (
                 <div
                   key={index}
                   className={`option ${selected === index ? "selected" : ""}`}
@@ -150,8 +163,8 @@ const QuizPage: React.FC<QuizPageProps> = ({ slug, onClose }) => {
               onClick={handleNext}
               disabled={selected === null}
             >
-              {current === questions.length - 1
-                ? "Finish Quiz"
+              {questionIndex === lesson.questions.length - 1
+                ? "Finish Lesson"
                 : "Next Question"}
             </button>
           </>

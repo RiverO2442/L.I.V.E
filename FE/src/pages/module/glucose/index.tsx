@@ -1,64 +1,65 @@
-import React, { useState } from "react";
 import {
-  ChevronRight,
   AlertTriangle,
   CheckCircle,
-  TrendingUp,
   Clock,
-  Target,
   Heart,
+  Target,
+  TrendingUp,
   Zap,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ModuleService, ProgressService } from "../../../service/service";
 import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
 
+interface Module {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  lessons: { id: string; title: string }[];
+}
+
+interface Progress {
+  moduleId: string;
+  progress: number;
+  timeSpentMin: number;
+  quizAccuracy?: number;
+  lastAccessed?: string;
+}
+
 const BloodGlucoseMonitoring = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [module, setModule] = useState<Module | null>(null);
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedLesson, setSelectedLesson] = useState<
+    Module["lessons"][0] | null
+  >(null);
 
-  const quizQuestions = [
-    {
-      id: 1,
-      question:
-        "When should you test your blood glucose if you have Type 1 diabetes?",
-      options: [
-        "Only when feeling unwell",
-        "Before meals and at bedtime",
-        "Once a week",
-        "Only after meals",
-      ],
-      correct: 1,
-      explanation:
-        "Regular testing before meals and at bedtime helps manage insulin dosing and detect patterns.",
-    },
-    {
-      id: 2,
-      question: "What blood glucose level indicates hypoglycemia?",
-      options: [
-        "Below 180 mg/dL",
-        "Below 100 mg/dL",
-        "Below 70 mg/dL",
-        "Below 140 mg/dL",
-      ],
-      correct: 2,
-      explanation:
-        "Blood glucose below 70 mg/dL is considered hypoglycemia and requires immediate treatment.",
-    },
-    {
-      id: 3,
-      question:
-        "If you experience severe hypoglycemia symptoms, what should you do first?",
-      options: [
-        "Take insulin immediately",
-        "Eat a large meal",
-        "Consume 15g of fast-acting carbs",
-        "Exercise to raise blood sugar",
-      ],
-      correct: 2,
-      explanation:
-        "The 15-15 rule: consume 15g fast-acting carbs, wait 15 minutes, then retest.",
-    },
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const [mod, progAll] = await Promise.all([
+          ModuleService.getBySlug("blood-glucose"),
+          ProgressService.myProgress(),
+        ]);
+        setModule(mod);
 
+        const prog = progAll.find(
+          (p: any) => p.module?.slug === "blood-glucose"
+        );
+        setProgress(prog || null);
+      } catch (err) {
+        console.error("Failed to load module:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <p className="p-6">Loading module...</p>;
+  if (!module) return <p className="p-6">Module not found.</p>;
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50">
       {/* Header */}
@@ -79,7 +80,6 @@ const BloodGlucoseMonitoring = () => {
           </div>
         </div>
       </div>
-
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Content */}
@@ -381,90 +381,84 @@ const BloodGlucoseMonitoring = () => {
               </div>
             </section>
 
-            {/* Interactive Quiz */}
-            <section className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow duration-300">
-              <div className="flex items-center gap-3 mb-6">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Knowledge Check
-                </h2>
+            <section className="bg-white rounded-xl shadow-lg p-8">
+              <div className="progress-header flex justify-between mb-4">
+                <span className="progress-title font-semibold text-gray-700">
+                  Module Progress
+                </span>
+                <span className="progress-percentage">
+                  {progress ? `${progress.progress}%` : "0%"}
+                </span>
               </div>
-              <button
-                className="quiz-button"
-                onClick={() => setModalOpen(true)}
-              >
-                Take Quiz 📝
-              </button>
+              <div className="progress-bar h-2 bg-gray-200 rounded-full">
+                <div
+                  className="progress-fill h-2 bg-teal-500 rounded-full transition-all"
+                  style={{ width: `${progress?.progress || 0}%` }}
+                ></div>
+              </div>
+              {selectedLesson && (
+                <button
+                  className="quiz-button mt-6"
+                  onClick={() => setModalOpen(true)}
+                >
+                  Take Quiz for {selectedLesson.title} 📝
+                </button>
+              )}
             </section>
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8 space-y-6">
-              {/* Progress Tracker */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">
-                  Your Progress
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Module Completion
-                    </span>
-                    <span className="text-sm font-semibold text-teal-600">
-                      85%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-teal-500 to-cyan-500 h-2 rounded-full"
-                      style={{ width: "85%" }}
-                    ></div>
+          <div className="lg:col-span-1 space-y-6">
+            <div className="info-card">
+              <h4>Module Details</h4>
+              <div className="info-item">
+                <div className="info-icon time-icon">🕐</div>
+                <div className="info-content">
+                  <div className="info-label">Estimated Time</div>
+                  <div className="info-value">45 minutes</div>
+                </div>
+              </div>
+              <div className="info-item">
+                <div className="info-icon access-icon">📅</div>
+                <div className="info-content">
+                  <div className="info-label">Last Accessed</div>
+                  <div className="info-value">
+                    {progress?.lastAccessed || "Never"}
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Quick Tips */}
-              <div className="bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl shadow-lg p-6 text-white">
-                <h3 className="font-semibold mb-4">💡 Pro Tips</h3>
-                <div className="space-y-3 text-sm">
-                  <p>• Keep a glucose log to identify patterns</p>
-                  <p>• Test more frequently when sick</p>
-                  <p>• Always carry glucose tablets</p>
-                  <p>• Don't squeeze your finger too hard</p>
+            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mt-1">
+                  ⚕️
                 </div>
-              </div>
-
-              {/* Healthcare Reminder */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mt-1">
-                    ⚕️
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-2">
-                      Important Reminder
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      This information is educational only. Always consult your
-                      healthcare provider for personalized advice and treatment
-                      decisions.
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 mb-2">
+                    Important Reminder
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    This information is educational only. Always consult your
+                    healthcare provider for personalized advice and treatment
+                    decisions.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <QuizPage
-          slug="blood-glucose"
-          onClose={() => {
-            setModalOpen(false);
-          }}
-        />
-      </ReusableModal>
+      {/* Quiz Modal */}
+      {selectedLesson && (
+        <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
+          <QuizPage
+            slug="blood-glucose"
+            lessonId={selectedLesson.id}
+            onClose={() => setModalOpen(false)}
+          />
+        </ReusableModal>
+      )}
     </div>
   );
 };

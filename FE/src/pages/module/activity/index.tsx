@@ -1,19 +1,74 @@
-import React, { useState, useEffect } from "react";
 import {
   Heart,
   Target,
+  BookOpen,
   Clock,
   CheckCircle,
-  Star,
-  ArrowRight,
+  PlayCircle,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ModuleService, ProgressService } from "../../../service/service";
 import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
+import QuizMaterial from "../../../utility/quizMaterial/quizMaterial";
+interface Progress {
+  moduleId: string;
+  progress: number;
+  timeSpentMin: number;
+  quizAccuracy?: number;
+  lastAccessed?: string;
+}
 
+interface Lesson {
+  id: string;
+  title: string;
+  order: number;
+  completed?: boolean;
+  lastAccess?: string;
+}
 const PhysicalActivityModule = () => {
   const [visibleSections, setVisibleSections] = useState(new Set());
   const [modalOpen, setModalOpen] = useState(false);
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
 
+  // Load module + lessons from API
+  useEffect(() => {
+    (async () => {
+      try {
+        const moduleData = await ModuleService.getBySlug("physical-activity");
+        setLessons(moduleData.lessons || []);
+
+        const progAll = await ProgressService.myProgress();
+        const prog = progAll.find(
+          (p: any) => p.module?.slug === "physical-activity"
+        );
+        setProgress(prog || null);
+      } catch (err) {
+        console.error("Failed to load module/progress:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+  // Load progress from API
+  useEffect(() => {
+    (async () => {
+      try {
+        const progAll = await ProgressService.myProgress();
+        const prog = progAll.find(
+          (p: any) => p.module?.slug === "physical-activity"
+        );
+        setProgress(prog || null);
+      } catch (err) {
+        console.error("Failed to load progress:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
   // Intersection Observer for scroll animations
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,6 +87,10 @@ const PhysicalActivityModule = () => {
 
     return () => observer.disconnect();
   }, []);
+
+  const handleLessonSelect = (lesson: Lesson) => {
+    setSelectedLesson(lesson);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -348,99 +407,60 @@ const PhysicalActivityModule = () => {
           </div>
         </section>
 
-        {/* Progressive Plan */}
         <section
-          id="plan"
+          id="lessons"
           data-animate
-          className={`mb-16 transition-all duration-1000 delay-600 ${
-            visibleSections.has("plan")
+          className={`mb-16 transition-all duration-1000 delay-100 ${
+            visibleSections.has("lessons")
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-10"
           }`}
         >
           <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-white" />
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-                Your 4-Week Progressive Plan
-              </h2>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
+                  Choose Your Lesson
+                </h2>
+                <p className="text-gray-600">
+                  Select a lesson to start learning
+                </p>
+              </div>
             </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                {
-                  week: "Week 1",
-                  title: "Getting Started",
-                  activities: [
-                    "10-min walks daily",
-                    "Light stretching",
-                    "Check glucose patterns",
-                  ],
-                  color: "from-green-400 to-green-500",
-                },
-                {
-                  week: "Week 2",
-                  title: "Building Habits",
-                  activities: [
-                    "15-min walks",
-                    "Add basic strength",
-                    "Monitor responses",
-                  ],
-                  color: "from-blue-400 to-blue-500",
-                },
-                {
-                  week: "Week 3",
-                  title: "Increasing Intensity",
-                  activities: [
-                    "20-min activities",
-                    "2x strength training",
-                    "Try new exercises",
-                  ],
-                  color: "from-purple-400 to-purple-500",
-                },
-                {
-                  week: "Week 4",
-                  title: "Full Routine",
-                  activities: [
-                    "30-min sessions",
-                    "3x strength training",
-                    "Plan next month",
-                  ],
-                  color: "from-indigo-400 to-indigo-500",
-                },
-              ].map((week, index) => (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {lessons.map((lesson) => (
                 <div
-                  key={index}
-                  className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-all duration-300"
+                  key={lesson.id}
+                  className={`flex gap-1 bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 p-6 cursor-pointer transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 ${
+                    selectedLesson?.id === lesson.id
+                      ? "border-sky-400 shadow-lg"
+                      : "border-gray-200 hover:border-sky-300"
+                  }`}
+                  onClick={() => handleLessonSelect(lesson)}
                 >
-                  <div
-                    className={`w-full h-2 bg-gradient-to-r ${week.color} rounded-full mb-4`}
-                  ></div>
-                  <h3 className="font-bold text-gray-800 text-lg mb-2">
-                    {week.week}
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {lesson.title}
                   </h3>
-                  <h4 className="font-semibold text-gray-700 mb-3">
-                    {week.title}
-                  </h4>
-                  <div className="space-y-2">
-                    {week.activities.map((activity, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-gray-600">
-                          {activity}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  {lesson.completed && (
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  )}
                 </div>
               ))}
             </div>
           </div>
         </section>
-
-        {/* Quiz Section */}
+        {/* Material right below the modal OR inside it */}
+        {selectedLesson && (
+          <QuizMaterial
+            slug="physical-activity"
+            category="activity"
+            lessonId={selectedLesson.id}
+          />
+        )}
+        {/* Quiz Section with Progress */}
         <section
           id="quiz"
           data-animate
@@ -450,47 +470,34 @@ const PhysicalActivityModule = () => {
               : "opacity-0 translate-y-10"
           }`}
         >
-          <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full flex items-center justify-center">
-                <Star className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-                Knowledge Check
-              </h2>
+          <div className="progress-section">
+            <div className="progress-header">
+              <span className="progress-title">Module Progress</span>
+              <span className="progress-percentage">
+                {progress ? `${progress.progress}%` : loading ? "…" : "0%"}
+              </span>
             </div>
-            <button className="quiz-button" onClick={() => setModalOpen(true)}>
-              Take Quiz 📝
-            </button>
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${progress?.progress || 0}%` }}
+              ></div>
+            </div>
           </div>
-        </section>
-
-        {/* Continue Button */}
-        <section
-          id="continue"
-          data-animate
-          className={`text-center transition-all duration-1000 delay-800 ${
-            visibleSections.has("continue")
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-10"
-          }`}
-        >
-          <button className="group bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-bold py-4 px-8 rounded-xl hover:from-sky-600 hover:to-indigo-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-3 mx-auto">
-            <span>Continue to Next Module</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <button className="quiz-button" onClick={() => setModalOpen(true)}>
+            Take Quiz 📝
           </button>
-          <p className="text-gray-500 text-sm mt-4">
-            Great progress! Keep up the momentum.
-          </p>
         </section>
       </div>
-      <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <QuizPage
-          onClose={() => {
-            setModalOpen(false);
-          }}
-        />
-      </ReusableModal>
+      {selectedLesson && (
+        <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
+          <QuizPage
+            lessonId={selectedLesson.id}
+            slug="physical-activity"
+            onClose={() => setModalOpen(false)}
+          />
+        </ReusableModal>
+      )}
     </div>
   );
 };

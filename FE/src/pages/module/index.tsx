@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import "./styles.css";
 import { useNavigate } from "react-router-dom";
-import { navigatePath } from "../../utility/router-config";
 import { ModuleService, ProgressService } from "../../service/service";
+import { navigatePath } from "../../utility/router-config";
+import "./styles.css";
 
 type Module = {
-  id: string; // e.g. "healthy-eating"
+  id: string;
   title: string;
   slug: string;
   summary: string;
@@ -16,6 +16,9 @@ type Progress = {
   moduleId: string;
   progress: number;
   timeSpentMin: number;
+  lastAccessed?: string;
+  quizAccuracy?: number;
+  module?: { slug: string; title: string };
 };
 
 const ModulesPage: React.FC = () => {
@@ -24,7 +27,7 @@ const ModulesPage: React.FC = () => {
   const [progress, setProgress] = useState<Record<string, Progress>>({});
   const [loading, setLoading] = useState(true);
 
-  // Map ids → icons, UI classes, navigate paths
+  // UI mapping
   const moduleUI: Record<
     string,
     { icon: string; class: string; path: string }
@@ -61,9 +64,11 @@ const ModulesPage: React.FC = () => {
 
         setModules(mods);
 
+        // build map keyed by slug (not moduleId)
         const progMap: Record<string, Progress> = {};
-        prog.forEach((p: any) => {
-          progMap[p.moduleId] = p;
+        prog.forEach((p: Progress) => {
+          const slug = p.module?.slug || "";
+          if (slug) progMap[slug] = p;
         });
         setProgress(progMap);
       } catch (err) {
@@ -74,7 +79,6 @@ const ModulesPage: React.FC = () => {
     })();
   }, []);
 
-  // Ripple + animation
   useEffect(() => {
     const animateProgressBars = () => {
       const bars = document.querySelectorAll<HTMLElement>(".progress-fill");
@@ -82,12 +86,11 @@ const ModulesPage: React.FC = () => {
         const targetProgress = bar.getAttribute("data-progress");
         setTimeout(() => {
           if (targetProgress) bar.style.width = targetProgress + "%";
-        }, index * 200 + 800);
+        }, index * 200 + 500);
       });
     };
-
-    window.addEventListener("load", animateProgressBars);
-  }, [modules]);
+    animateProgressBars();
+  }, [modules, progress]);
 
   return (
     <main>
@@ -99,29 +102,13 @@ const ModulesPage: React.FC = () => {
             diabetes education tailored just for you.
           </p>
         </section>
+
         <div className="page-title">
           <h1>Your Learning Modules</h1>
           <p>
             Master diabetes self-management through interactive learning
             experiences designed just for you.
           </p>
-        </div>
-        {/* Stats (static for now) */}
-        <div className="stats-summary">
-          <div className="stats-row">
-            <div className="stat-item">
-              <span className="stat-number">0</span>
-              <div className="stat-label">Completed Modules</div>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">0%</span>
-              <div className="stat-label">Overall Progress</div>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">0</span>
-              <div className="stat-label">Hours Learning</div>
-            </div>
-          </div>
         </div>
 
         <div className="modules-grid">
@@ -152,7 +139,11 @@ const ModulesPage: React.FC = () => {
                       <span className="progress-percentage">{pct}%</span>
                     </div>
                     <div className="progress-bar">
-                      <div className="progress-fill" data-progress={pct}></div>
+                      <div
+                        className="progress-fill"
+                        data-progress={pct}
+                        style={{ width: "0%" }}
+                      ></div>
                     </div>
                   </div>
                   <button
@@ -167,6 +158,12 @@ const ModulesPage: React.FC = () => {
                   >
                     {buttonLabel}
                   </button>
+                  {/* {prog?.lastAccessed && (
+                    <div className="last-accessed">
+                      Last accessed:{" "}
+                      {new Date(prog.lastAccessed).toLocaleString()}
+                    </div>
+                  )} */}
                 </div>
               );
             })

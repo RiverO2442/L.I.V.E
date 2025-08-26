@@ -1,7 +1,10 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import { navigatePath } from "../utility/router-config";
 import "./styles.css";
+import { useNavigate } from "react-router-dom";
 
 const AboutPage = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     const observerOptions = {
       threshold: 0.1,
@@ -50,7 +53,7 @@ const AboutPage = () => {
   }, []);
 
   const exploreModules = () => {
-    alert("Redirecting to learning modules...");
+    navigate(`/${navigatePath.login}`);
   };
 
   return (
@@ -172,7 +175,7 @@ const AboutPage = () => {
             management...
           </p>
           <button className="cta-button" onClick={exploreModules}>
-            Explore Modules
+            To Login
           </button>
         </div>
       </section>

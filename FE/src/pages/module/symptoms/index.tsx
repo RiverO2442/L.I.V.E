@@ -1,27 +1,66 @@
-import React, { useState, useEffect } from "react";
 import {
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Phone,
-  Clock,
   CheckCircle,
-  X,
+  Clock,
+  Phone,
   RotateCcw,
-  ArrowRight,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ModuleService, ProgressService } from "../../../service/service";
 import ReusableModal from "../../../utility/modal";
+import QuizMaterial from "../../../utility/quizMaterial/quizMaterial";
 import QuizPage from "../../quiz/quiz";
+
+interface Module {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  lessons: { id: string; title: string }[];
+}
+
+interface Progress {
+  moduleId: string;
+  progress: number;
+  timeSpentMin: number;
+  quizAccuracy?: number;
+  lastAccessed?: string;
+}
 
 const RecognisingSymptoms = () => {
   const [checkedSymptoms, setCheckedSymptoms] = useState(new Set());
-  const [draggedItem, setDraggedItem] = useState(null);
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [showResults, setShowResults] = useState(false);
   const [visibleSections, setVisibleSections] = useState(new Set());
   const [modalOpen, setModalOpen] = useState(false);
+  const [module, setModule] = useState<Module | null>(null);
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedLesson, setSelectedLesson] = useState<
+    Module["lessons"][0] | null
+  >(null);
 
-  // Scroll animations
+  // Fetch module + progress
+  useEffect(() => {
+    (async () => {
+      try {
+        const [mod, progAll] = await Promise.all([
+          ModuleService.getBySlug("recognising-symptoms"),
+          ProgressService.myProgress(),
+        ]);
+        setModule(mod);
+        const prog = progAll.find(
+          (p: any) => p.module?.slug === "recognising-symptoms"
+        );
+        setProgress(prog || null);
+      } catch (err) {
+        console.error("Failed to load module:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Intersection animations
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -36,9 +75,36 @@ const RecognisingSymptoms = () => {
 
     const sections = document.querySelectorAll("[data-animate]");
     sections.forEach((section) => observer.observe(section));
-
     return () => observer.disconnect();
   }, []);
+
+  const handleSymptomCheck = (symptomId: string) => {
+    setCheckedSymptoms((prev) => {
+      const newSet = new Set(prev);
+      newSet.has(symptomId) ? newSet.delete(symptomId) : newSet.add(symptomId);
+      return newSet;
+    });
+  };
+
+  const resetChecklist = () => setCheckedSymptoms(new Set());
+
+  const getSeverityColor = (severity: any) => {
+    switch (severity) {
+      case "common":
+        return "bg-yellow-100 border-yellow-300 text-yellow-800";
+      case "moderate":
+        return "bg-orange-100 border-orange-300 text-orange-800";
+      case "severe":
+        return "bg-red-100 border-red-300 text-red-800";
+      case "emergency":
+        return "bg-red-200 border-red-400 text-red-900";
+      default:
+        return "bg-gray-100 border-gray-300 text-gray-800";
+    }
+  };
+
+  if (loading) return <p className="p-6">Loading module...</p>;
+  if (!module) return <p className="p-6">Module not found.</p>;
 
   const highBloodSugarSymptoms = [
     { id: "thirst", text: "Excessive thirst", icon: "🚰", severity: "common" },
@@ -101,106 +167,6 @@ const RecognisingSymptoms = () => {
       severity: "emergency",
     },
   ];
-
-  const quizScenarios = [
-    {
-      id: 1,
-      scenario:
-        "Sarah feels extremely thirsty, has been urinating frequently, and feels very tired. Her blood glucose is 320 mg/dL.",
-      options: [
-        "High blood sugar (hyperglycemia)",
-        "Low blood sugar (hypoglycemia)",
-        "Normal variation",
-        "Dehydration only",
-      ],
-      correct: 0,
-      explanation:
-        "These are classic symptoms of hyperglycemia, confirmed by the high blood glucose reading.",
-    },
-    {
-      id: 2,
-      scenario:
-        "Mark is shaking, sweating, and feels suddenly very hungry. He's also having trouble concentrating.",
-      options: [
-        "High blood sugar",
-        "Low blood sugar (hypoglycemia)",
-        "Anxiety attack",
-        "Food poisoning",
-      ],
-      correct: 1,
-      explanation:
-        "Shakiness, sweating, sudden hunger, and difficulty concentrating are typical hypoglycemia symptoms.",
-    },
-    {
-      id: 3,
-      scenario:
-        "Lisa has blurred vision, a headache, and fruity-smelling breath. When should she seek help?",
-      options: [
-        "Wait a few hours",
-        "Check blood sugar and call doctor if high",
-        "Only if symptoms worsen",
-        "No action needed",
-      ],
-      correct: 1,
-      explanation:
-        "Fruity breath odor can indicate ketoacidosis - immediate medical attention is needed.",
-    },
-  ];
-
-  const handleSymptomCheck = (symptomId) => {
-    setCheckedSymptoms((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(symptomId)) {
-        newSet.delete(symptomId);
-      } else {
-        newSet.add(symptomId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleQuizAnswer = (questionId, answerIndex) => {
-    setQuizAnswers((prev) => ({
-      ...prev,
-      [questionId]: answerIndex,
-    }));
-  };
-
-  const calculateScore = () => {
-    let correct = 0;
-    quizScenarios.forEach((q) => {
-      if (quizAnswers[q.id] === q.correct) correct++;
-    });
-    return correct;
-  };
-
-  const submitQuiz = () => {
-    setShowResults(true);
-  };
-
-  const resetQuiz = () => {
-    setQuizAnswers({});
-    setShowResults(false);
-  };
-
-  const resetChecklist = () => {
-    setCheckedSymptoms(new Set());
-  };
-
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case "common":
-        return "bg-yellow-100 border-yellow-300 text-yellow-800";
-      case "moderate":
-        return "bg-orange-100 border-orange-300 text-orange-800";
-      case "severe":
-        return "bg-red-100 border-red-300 text-red-800";
-      case "emergency":
-        return "bg-red-200 border-red-400 text-red-900";
-      default:
-        return "bg-gray-100 border-gray-300 text-gray-800";
-    }
-  };
 
   return (
     <div
@@ -607,16 +573,43 @@ const RecognisingSymptoms = () => {
           </div>
         </section>
 
-        {/* Quiz Section */}
-        <section
-          id="quiz"
-          data-animate
-          className={`transition-all duration-1000 delay-700 ${
-            visibleSections.has("quiz")
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-10"
-          }`}
-        >
+        <section className="max-w-6xl mx-auto px-4 py-12">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <h2 className="text-xl font-semibold mb-4">Lessons</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              {module.lessons.map((lesson) => (
+                <div
+                  key={lesson.id}
+                  onClick={() => setSelectedLesson(lesson)}
+                  className={`p-4 border rounded-lg cursor-pointer ${
+                    selectedLesson?.id === lesson.id
+                      ? "border-amber-500 bg-amber-50"
+                      : "border-gray-200 hover:border-amber-400"
+                  }`}
+                >
+                  {lesson.title}
+                </div>
+              ))}
+            </div>
+            {selectedLesson && (
+              <p className="mt-2 text-sm text-amber-700">
+                Selected: {selectedLesson.title}
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Materials */}
+        {selectedLesson && (
+          <QuizMaterial
+            category="symptoms"
+            slug={module.slug}
+            lessonId={selectedLesson.id}
+          />
+        )}
+
+        {/* Quiz */}
+        <section className="max-w-6xl mx-auto px-4 py-12">
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 bg-gradient-to-r from-amber-400 to-red-400 rounded-full flex items-center justify-center">
@@ -626,130 +619,27 @@ const RecognisingSymptoms = () => {
                 Scenario Quiz
               </h2>
             </div>
-            <button className="quiz-button" onClick={() => setModalOpen(true)}>
-              Take Quiz 📝
-            </button>
-            {/* 
-            {!showResults ? (
-              <div className="space-y-8">
-                {quizScenarios.map((scenario, index) => (
-                  <div
-                    key={scenario.id}
-                    className="border border-gray-200 rounded-xl p-6"
-                  >
-                    <h3 className="font-semibold text-gray-800 mb-4">
-                      Scenario {index + 1}:
-                    </h3>
-                    <p className="text-gray-700 mb-6 p-4 bg-gray-50 rounded-lg italic">
-                      "{scenario.scenario}"
-                    </p>
-                    <div className="grid md:grid-cols-2 gap-3">
-                      {scenario.options.map((option, optionIndex) => (
-                        <label
-                          key={optionIndex}
-                          className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg p-3 transition-colors border border-transparent hover:border-gray-200"
-                        >
-                          <input
-                            type="radio"
-                            name={`scenario-${scenario.id}`}
-                            value={optionIndex}
-                            onChange={() =>
-                              handleQuizAnswer(scenario.id, optionIndex)
-                            }
-                            className="text-amber-500 focus:ring-amber-400"
-                          />
-                          <span className="text-gray-700">{option}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                <div className="text-center">
-                  <button
-                    onClick={submitQuiz}
-                    disabled={
-                      Object.keys(quizAnswers).length < quizScenarios.length
-                    }
-                    className="bg-gradient-to-r from-amber-500 to-red-500 text-white font-semibold py-4 px-8 rounded-xl hover:from-amber-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 shadow-lg"
-                  >
-                    Submit Quiz
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center space-y-6">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-amber-400 to-red-400 rounded-full text-white text-3xl">
-                  🎯
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                    Quiz Complete!
-                  </h3>
-                  <p className="text-lg text-gray-600">
-                    You scored {calculateScore()} out of {quizScenarios.length}
-                  </p>
-                </div>
-
-                <div className="space-y-4 text-left max-w-3xl mx-auto">
-                  {quizScenarios.map((scenario, index) => (
-                    <div
-                      key={scenario.id}
-                      className="bg-gray-50 rounded-lg p-4"
-                    >
-                      <h4 className="font-medium text-gray-800 mb-2">
-                        Scenario {index + 1}:{" "}
-                        {quizAnswers[scenario.id] === scenario.correct
-                          ? "✅"
-                          : "❌"}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {scenario.explanation}
-                      </p>
-                      <p className="text-xs text-amber-600 font-medium">
-                        Correct answer: {scenario.options[scenario.correct]}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={resetQuiz}
-                  className="bg-gradient-to-r from-amber-500 to-red-500 text-white font-semibold py-3 px-6 rounded-xl hover:from-amber-600 hover:to-red-600 transition-all duration-300 transform hover:scale-105"
-                >
-                  Retake Quiz
-                </button>
-              </div>
-            )} */}
+            {selectedLesson && (
+              <button
+                className="quiz-button"
+                onClick={() => setModalOpen(true)}
+              >
+                Take Quiz for {selectedLesson.title} 📝
+              </button>
+            )}
           </div>
         </section>
-
-        {/* Continue Button */}
-        <section
-          id="continue"
-          data-animate
-          className={`text-center transition-all duration-1000 delay-800 ${
-            visibleSections.has("continue")
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-10"
-          }`}
-        >
-          <button className="group bg-gradient-to-r from-amber-500 to-red-500 text-white font-bold py-4 px-8 rounded-xl hover:from-amber-600 hover:to-red-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-3 mx-auto">
-            <span>Continue to Final Module</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <p className="text-gray-500 text-sm mt-4">
-            You're almost done! One more module to go.
-          </p>
-        </section>
       </div>
-      <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <QuizPage
-          onClose={() => {
-            setModalOpen(false);
-          }}
-        />
-      </ReusableModal>
+      {/* Modal */}
+      {selectedLesson && (
+        <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
+          <QuizPage
+            slug="recognising-symptoms"
+            lessonId={selectedLesson.id}
+            onClose={() => setModalOpen(false)}
+          />
+        </ReusableModal>
+      )}
     </div>
   );
 };

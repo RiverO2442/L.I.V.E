@@ -114,24 +114,37 @@ export const ModuleService = {
 };
 
 /* ===================== QUIZZES ===================== */
-/* ===================== QUIZZES ===================== */
 export const QuizService = {
   getByModuleSlug: (slug: string) => apiFetch(`/api/quiz/${slug}/quiz`),
 
   submit: (
     slug: string,
     answers: { questionId: string; selectedIndex: number }[],
-    startTime: number // 👈 timestamp from FE
-  ) => {
-    const durationMs = Date.now() - startTime;
-    const timeSpentMin = Math.max(1, Math.round(durationMs / 60000)); // at least 1 min
-
-    return apiFetch(`/api/quiz/${slug}/quiz/submit`, {
+    startTime: number // timestamp from FE
+  ) =>
+    apiFetch(`/api/quiz/${slug}/quiz/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers, startTime, timeSpentMin }),
-    });
-  },
+      body: JSON.stringify({ answers, startTime }),
+    }),
+
+  getAttempts: (slug: string) => apiFetch(`/api/quiz/${slug}/quiz/attempts`),
+
+  addQuiz: (
+    slug: string,
+    data: {
+      question: string;
+      feedback: string;
+      options: string[];
+      correctIndex: number;
+      lessonId?: string;
+    }
+  ) =>
+    apiFetch(`/api/quiz/${slug}/quiz`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
 };
 
 /* ===================== PROGRESS ===================== */
@@ -143,5 +156,16 @@ export const ProgressService = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ moduleId, progress, timeSpentMin }),
+    }),
+
+  // Lesson-level
+  getLessons: (moduleId: string) =>
+    apiFetch(`/api/progress/${moduleId}/lessons`),
+
+  updateLesson: (moduleId: string, lessonId: string, completed = true) =>
+    apiFetch(`/api/progress/${moduleId}/lessons/${lessonId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed }),
     }),
 };

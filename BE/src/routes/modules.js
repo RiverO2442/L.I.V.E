@@ -1,6 +1,7 @@
 // BE/routes/modules.js
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
+import { requireAuth } from "../middleware/auth.js";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -26,7 +27,8 @@ router.get("/", async (_req, res, next) => {
 });
 
 // ✅ Get a specific module by slug or title (case-insensitive)
-router.get("/:identifier", async (req, res, next) => {
+// Includes lessons + user lesson progress if authenticated
+router.get("/:identifier", requireAuth, async (req, res, next) => {
   try {
     const identifier = req.params.identifier.toLowerCase();
 
@@ -51,10 +53,69 @@ router.get("/:identifier", async (req, res, next) => {
 
     if (!mod) return res.status(404).json({ error: "Module not found" });
 
-    res.json(mod);
+    // 👇 attach user lesson progress
+    const lessonProgress = await prisma.userLessonProgress.findMany({
+      where: {
+        userId: req.user.id,
+        lessonId: { in: mod.lessons.map((l) => l.id) },
+      },
+      select: {
+        lessonId: true,
+        completed: true,
+        lastAccess: true,
+      },
+    });
+
+    // Merge lesson progress into lessons
+    const lessonsWithProgress = mod.lessons.map((lesson) => {
+      const progress = lessonProgress.find((lp) => lp.lessonId === lesson.id);
+      return {
+        ...lesson,
+        completed: progress?.completed || false,
+        lastAccess: progress?.lastAccess || null,
+      };
+    });
+
+    res.json({ ...mod, lessons: lessonsWithProgress });
   } catch (err) {
     next(err);
   }
 });
+
+// ✅ Mark lesson as completed or accessed
+router.post(
+  "/:moduleId/lessons/:lessonId/progress",
+  requireAuth,
+  async (req, res, next) => {
+    try {
+      const { moduleId, lessonId } = req.params;
+      const { completed } = req.body;
+
+      const lesson = await prisma.lesson.findFirst({
+        where: { id: lessonId, moduleId: moduleId },
+      });
+      if (!lesson) return res.status(404).json({ error: "Lesson not found" });
+
+      const state = await prisma.userLessonProgress.upsert({
+        where: {
+          userId_lessonId: { userId: req.user.id, lessonId },
+        },
+        update: {
+          completed: completed ?? true,
+          lastAccess: new Date(),
+        },
+        create: {
+          userId: req.user.id,
+          lessonId,
+          completed: completed ?? true,
+        },
+      });
+
+      res.json(state);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;
