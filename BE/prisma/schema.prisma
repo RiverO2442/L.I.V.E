@@ -15,7 +15,7 @@ model User {
   createdAt    DateTime @default(now())
 
   progresses   UserProgress[]
-  lessonStates UserLessonProgress[]   // 👈 new relation
+  lessonStates UserLessonProgress[]  
   attempts     QuizAttempt[]
   RefreshToken RefreshToken[]
 }
@@ -46,7 +46,7 @@ model Lesson {
   userStates UserLessonProgress[]
 
   @@index([moduleId])
-  @@unique([moduleId, title])   // 👈 Add this
+  @@unique([moduleId, title])   
 }
 
 
@@ -65,7 +65,7 @@ model QuizQuestion {
   lesson Lesson? @relation(fields: [lessonId], references: [id])
 
   @@index([moduleId])
-  @@unique([moduleId, question]) // 👈 no duplicate questions per module
+  @@unique([moduleId, question])
 }
 
 model UserProgress {
@@ -86,16 +86,18 @@ model UserProgress {
 }
 
 model UserLessonProgress {
-  id         String   @id @default(uuid())
-  userId     String
-  lessonId   String
-  completed  Boolean  @default(false)
-  lastAccess DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  lessonId  String
+  completed Boolean  @default(false)
+  accuracy  Int?    
+  attempts  Int      @default(0) 
+  lastAccess DateTime?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, lessonId])  // 👈 one record per user per lesson
+  @@unique([userId, lessonId])
   @@index([userId])
   @@index([lessonId])
 }

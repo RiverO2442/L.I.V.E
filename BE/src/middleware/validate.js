@@ -2,8 +2,7 @@ import Joi from "joi";
 
 export const validateQuizSubmission = (req, res, next) => {
   const schema = Joi.object({
-    // userId removed – taken from req.user.id
-    moduleId: Joi.string().required(), // slug or id
+    moduleId: Joi.string().required(),
     answers: Joi.array()
       .items(
         Joi.object({
@@ -24,8 +23,7 @@ export const validateQuizSubmission = (req, res, next) => {
 
 export const validateProgressUpdate = (req, res, next) => {
   const schema = Joi.object({
-    // userId removed – taken from req.user.id
-    moduleId: Joi.string().required(), // slug or id
+    moduleId: Joi.string().required(),
     progress: Joi.number().min(0).max(100).required(),
     timeSpentMin: Joi.number().min(0).default(0),
   });

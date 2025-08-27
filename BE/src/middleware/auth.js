@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-const ACCESS_TTL = process.env.JWT_EXPIRES_IN || "15m"; // short
+const ACCESS_TTL = process.env.JWT_EXPIRES_IN || "15m";
 const REFRESH_TTL_SEC = parseInt(
   process.env.REFRESH_TTL_SEC || `${60 * 60 * 24 * 7}`
 ); // 7 days
@@ -64,7 +64,6 @@ export async function rotateRefreshToken(oldRaw) {
 }
 
 export function setRefreshCookie(res, raw, expiresAt) {
-  // httpOnly cookie (recommended). Use Secure in prod.
   res.cookie("refresh_token", raw, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

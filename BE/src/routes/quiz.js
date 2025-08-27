@@ -42,6 +42,7 @@ async function findModule(identifier) {
  * Validation schema for quiz submission
  */
 const submissionSchema = Joi.object().keys({
+  lessonId: Joi.string().required(),
   answers: Joi.array()
     .items(
       Joi.object({
@@ -53,7 +54,6 @@ const submissionSchema = Joi.object().keys({
     .required(),
   startTime: Joi.number().integer().optional(),
 });
-
 /**
  * GET /api/quiz/:idOrSlug/quiz
  * Return quiz questions grouped by lessons
@@ -82,9 +82,7 @@ router.get("/:idOrSlug/quiz", async (req, res, next) => {
   }
 });
 
-/**
- * POST /api/quiz/:idOrSlug/quiz/submit
- */
+// POST /api/quiz/:idOrSlug/quiz/submit
 router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
   try {
     const { error, value } = submissionSchema.validate(req.body, {
@@ -99,54 +97,36 @@ router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
     const mod = await findModule(req.params.idOrSlug);
     if (!mod) return res.status(404).json({ error: "Module not found" });
 
-    // Load all questions (with lessonId + correctIndex for grading)
+    // --- 1. Fetch only the questions for this lesson
     const questions = await prisma.quizQuestion.findMany({
-      where: { moduleId: mod.id },
-      select: { id: true, lessonId: true, correctIndex: true, feedback: true },
+      where: { moduleId: mod.id, lessonId: value.lessonId },
+      select: { id: true, correctIndex: true, feedback: true },
     });
-    if (questions.length === 0) {
-      return res.status(400).json({ error: "No questions for this module" });
+    if (!questions.length) {
+      return res.status(400).json({ error: "No questions for this lesson" });
     }
 
-    const correctMap = new Map(
-      questions.map((q) => [
-        q.id,
-        {
-          correctIndex: q.correctIndex,
-          feedback: q.feedback,
-          lessonId: q.lessonId,
-        },
-      ])
-    );
-
-    // Grade submission
+    // --- 2. Grade answers
     let correctCount = 0;
     const results = value.answers.map((a) => {
-      const entry = correctMap.get(a.questionId);
-      if (!entry) return { ...a, correct: false, feedback: "Invalid question" };
-      const correct = entry.correctIndex === a.selectedIndex;
+      const q = questions.find((q) => q.id === a.questionId);
+      if (!q) return { ...a, correct: false, feedback: "Invalid question" };
+
+      const correct = q.correctIndex === a.selectedIndex;
       if (correct) correctCount++;
+
       return {
         questionId: a.questionId,
         selectedIndex: a.selectedIndex,
         correct,
-        feedback: entry.feedback,
+        feedback: q.feedback,
       };
     });
 
     const total = questions.length;
     const accuracy = Math.round((correctCount / total) * 100);
 
-    // Time spent
-    const startTimeRaw = value.startTime ? Number(value.startTime) : null;
-    const startTime = startTimeRaw ? new Date(startTimeRaw) : null;
-    const endTime = new Date();
-    let timeSpentMin = 0;
-    if (startTime) {
-      timeSpentMin = Math.max(1, Math.round((endTime - startTime) / 60000));
-    }
-
-    // Save attempt
+    // --- 3. Save attempt tied to lesson
     const attempt = await prisma.quizAttempt.create({
       data: {
         userId: req.user.id,
@@ -156,81 +136,73 @@ router.post("/:idOrSlug/quiz/submit", requireAuth, async (req, res, next) => {
         accuracy,
         answers: value.answers,
       },
-      select: {
-        id: true,
-        score: true,
-        total: true,
-        accuracy: true,
-        createdAt: true,
+    });
+
+    // --- 4. Update LESSON progress (completed once submitted)
+    const lessonProgress = await prisma.userLessonProgress.upsert({
+      where: {
+        userId_lessonId: { userId: req.user.id, lessonId: value.lessonId },
+      },
+      update: {
+        completed: true,
+        accuracy,
+        attempts: { increment: 1 },
+        lastAccess: new Date(),
+      },
+      create: {
+        userId: req.user.id,
+        lessonId: value.lessonId,
+        completed: true,
+        accuracy,
+        attempts: 1,
+        lastAccess: new Date(),
       },
     });
 
-    // --- Lesson-level progress ---
-    const lessonIds = new Map(); // lessonId -> { answered, correct }
-    results.forEach((r) => {
-      const entry = correctMap.get(r.questionId);
-      if (!entry?.lessonId) return;
-      if (!lessonIds.has(entry.lessonId)) {
-        lessonIds.set(entry.lessonId, { total: 0, correct: 0 });
-      }
-      const agg = lessonIds.get(entry.lessonId);
-      agg.total++;
-      if (r.correct) agg.correct++;
+    // --- 5. Update MODULE progress (average of lesson accuracies)
+    const allLessonProgresses = await prisma.userLessonProgress.findMany({
+      where: { userId: req.user.id, lesson: { moduleId: mod.id } },
     });
 
-    for (const [lessonId, stats] of lessonIds.entries()) {
-      const lessonAccuracy = Math.round((stats.correct / stats.total) * 100);
-      await prisma.userLessonProgress.upsert({
-        where: { userId_lessonId: { userId: req.user.id, lessonId } },
-        update: { completed: true, lastAccess: endTime },
-        create: {
-          userId: req.user.id,
-          lessonId,
-          completed: true,
-          lastAccess: endTime,
-        },
-      });
-    }
+    const completedLessons = allLessonProgresses.filter((lp) => lp.completed);
+    const avgAccuracy =
+      completedLessons.length > 0
+        ? Math.round(
+            completedLessons.reduce((sum, lp) => sum + (lp.accuracy || 0), 0) /
+              completedLessons.length
+          )
+        : 0;
 
-    // --- Module-level progress ---
-    const userAnswers = await prisma.quizAttempt.findMany({
-      where: { userId: req.user.id, moduleId: mod.id },
-      select: { answers: true, accuracy: true },
+    const totalLessons = await prisma.lesson.count({
+      where: { moduleId: mod.id },
     });
+    const progressPercent =
+      totalLessons > 0
+        ? Math.round((completedLessons.length / totalLessons) * 100)
+        : 0;
 
-    const answeredIds = new Set();
-    let totalAccuracy = 0;
-    userAnswers.forEach((att) => {
-      att.answers.forEach((ans) => answeredIds.add(ans.questionId));
-      totalAccuracy += att.accuracy;
-    });
-
-    const answeredCount = answeredIds.size;
-    const progressPercent = Math.round((answeredCount / total) * 100);
-    const avgAccuracy = Math.round(totalAccuracy / userAnswers.length);
-
-    const progress = await prisma.userProgress.upsert({
+    const moduleProgress = await prisma.userProgress.upsert({
       where: { userId_moduleId: { userId: req.user.id, moduleId: mod.id } },
       update: {
         progress: progressPercent,
         quizAccuracy: avgAccuracy,
-        lastAccessed: endTime,
-        timeSpentMin: { increment: timeSpentMin },
+        lastAccessed: new Date(),
       },
       create: {
         userId: req.user.id,
         moduleId: mod.id,
         progress: progressPercent,
         quizAccuracy: avgAccuracy,
-        timeSpentMin,
+        timeSpentMin: 0,
       },
     });
 
     res.json({
-      result: { correct: correctCount, total, accuracy, timeSpentMin },
+      result: { correct: correctCount, total, accuracy },
       results,
       attempt,
-      progress,
+      lessonProgress,
+      moduleProgress,
     });
   } catch (err) {
     next(err);

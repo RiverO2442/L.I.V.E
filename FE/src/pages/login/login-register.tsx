@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 import { AuthService } from "../../service/service";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../utility/authContext"; // 👈 import context
+import { useAuth } from "../../utility/authContext";
 
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // 👈 use context login
+  const { login } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,18 +36,17 @@ const AuthPage: React.FC = () => {
 
     try {
       const data = await AuthService.login(loginForm.email, loginForm.password);
-
       if (data && data.accessToken) {
-        login(data.accessToken); // 👈 update context
+        login(data.accessToken);
         setSuccessMessage("Login successful! Redirecting...");
         setTimeout(() => {
-          navigate("/"); // 👈 redirect home
+          navigate("/");
         }, 800);
       } else {
         setErrorMessage("Login failed. Please check your credentials.");
       }
-    } catch (error) {
-      setErrorMessage("Network error. Please try again later.");
+    } catch (error: any) {
+      setErrorMessage(error?.error || "Incorrect password or email address");
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
@@ -73,7 +72,7 @@ const AuthPage: React.FC = () => {
       );
 
       if (data && data.accessToken) {
-        login(data.accessToken); // 👈 update context
+        login(data.accessToken);
         setSuccessMessage("Account created! Redirecting...");
         setTimeout(() => {
           navigate("/");

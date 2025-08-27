@@ -5,7 +5,6 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const navLinks = document.getElementById("navLinks");
     const mobileMenu = document.getElementById("mobileMenu");
-    const buttons = document.querySelectorAll(".module-button");
 
     mobileMenu?.addEventListener("click", () => {
       navLinks?.classList.toggle("active");

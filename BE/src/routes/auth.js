@@ -148,7 +148,7 @@ router.post("/logout", async (req, res, next) => {
     const rt = req.cookies?.refresh_token;
     if (rt) {
       // best-effort revoke (ignore errors)
-      const { sha256 } = await import("../middleware/auth.js"); // dynamic to reuse hash
+      const { sha256 } = await import("../middleware/auth.js");
       const tokenHash = sha256(rt);
       await prisma.refreshToken
         .update({

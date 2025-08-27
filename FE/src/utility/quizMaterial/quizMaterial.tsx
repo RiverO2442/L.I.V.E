@@ -13,7 +13,7 @@ const ICONS = {
 interface QuizMaterialProps {
   slug: string; // module slug
   category: keyof typeof ICONS;
-  lessonId: string; // 👈 now required
+  lessonId: string;
 }
 
 const QuizMaterial: React.FC<QuizMaterialProps> = ({

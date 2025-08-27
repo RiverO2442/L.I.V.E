@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from "react";
 import {
-  Apple,
   Activity,
-  Droplets,
   AlertCircle,
+  Apple,
   Clock,
+  Droplets,
   Target,
-  Trophy,
   TrendingUp,
+  Trophy,
 } from "lucide-react";
-import { ModuleService, ProgressService } from "../../service/service";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { navigatePath } from "../../utility/router-config";
+import { ModuleService, ProgressService } from "../../service/service";
 
 interface Module {
   id: string;

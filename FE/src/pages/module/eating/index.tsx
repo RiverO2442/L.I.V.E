@@ -4,6 +4,8 @@ import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
 import { ModuleService, ProgressService } from "../../../service/service";
 import QuizMaterial from "../../../utility/quizMaterial/quizMaterial";
+import { CheckCircle } from "lucide-react";
+import { formatDate } from "../../../utility/dateFormat";
 
 interface Module {
   id: string;
@@ -19,6 +21,7 @@ interface Progress {
   timeSpentMin: number;
   quizAccuracy?: number;
   lastAccessed?: string;
+  completed?: boolean;
 }
 
 const HealthyEatingModule: React.FC = () => {
@@ -128,25 +131,28 @@ const HealthyEatingModule: React.FC = () => {
             <div className="lessons-section">
               <h3 className="mb-4 font-bold text-lg">Lessons</h3>
               <div className="grid md:grid-cols-2 gap-4">
-                {module.lessons.map((lesson) => (
+                {module.lessons.map((lesson: any) => (
                   <div
                     key={lesson.id}
                     onClick={() => setSelectedLesson(lesson)}
-                    className={`p-4 rounded-lg border cursor-pointer transition ${
+                    className={`p-4 rounded-lg border cursor-pointer transition flex gap-1 ${
                       selectedLesson?.id === lesson.id
                         ? "border-teal-500 bg-teal-50"
                         : "border-gray-200 hover:border-teal-400"
                     }`}
                   >
                     <h4 className="font-medium">{lesson.title}</h4>
+                    {lesson.completed && (
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                    )}
                   </div>
                 ))}
               </div>
-              {selectedLesson && (
+              {/* {selectedLesson && (
                 <p className="text-sm text-teal-700 mt-2">
                   Selected lesson: {selectedLesson.title}
                 </p>
-              )}
+              )} */}
             </div>
 
             {/* Study Materials */}
@@ -200,7 +206,7 @@ const HealthyEatingModule: React.FC = () => {
                 <div className="info-content">
                   <div className="info-label">Last Accessed</div>
                   <div className="info-value">
-                    {progress?.lastAccessed || "Never"}
+                    {(progress && formatDate(progress.lastAccessed)) || "Never"}
                   </div>
                 </div>
               </div>

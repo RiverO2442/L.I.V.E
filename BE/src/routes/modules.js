@@ -26,7 +26,6 @@ router.get("/", async (_req, res, next) => {
   }
 });
 
-// ✅ Get a specific module by slug or title (case-insensitive)
 // Includes lessons + user lesson progress if authenticated
 router.get("/:identifier", requireAuth, async (req, res, next) => {
   try {

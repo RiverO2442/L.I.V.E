@@ -11,13 +11,15 @@ import { useEffect, useState } from "react";
 import { ModuleService, ProgressService } from "../../../service/service";
 import ReusableModal from "../../../utility/modal";
 import QuizPage from "../../quiz/quiz";
+import QuizMaterial from "../../../utility/quizMaterial/quizMaterial";
+import { formatDate } from "../../../utility/dateFormat";
 
 interface Module {
   id: string;
   slug: string;
   title: string;
   summary: string;
-  lessons: { id: string; title: string }[];
+  lessons: { id: string; title: string; completed?: boolean }[];
 }
 
 interface Progress {
@@ -26,9 +28,10 @@ interface Progress {
   timeSpentMin: number;
   quizAccuracy?: number;
   lastAccessed?: string;
+  completed?: boolean;
 }
 
-const BloodGlucoseMonitoring = () => {
+const BloodGlucoseMonitoring: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [module, setModule] = useState<Module | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
@@ -37,6 +40,7 @@ const BloodGlucoseMonitoring = () => {
     Module["lessons"][0] | null
   >(null);
 
+  // Fetch module + progress
   useEffect(() => {
     (async () => {
       try {
@@ -44,8 +48,8 @@ const BloodGlucoseMonitoring = () => {
           ModuleService.getBySlug("blood-glucose"),
           ProgressService.myProgress(),
         ]);
-        setModule(mod);
 
+        setModule(mod);
         const prog = progAll.find(
           (p: any) => p.module?.slug === "blood-glucose"
         );
@@ -58,25 +62,34 @@ const BloodGlucoseMonitoring = () => {
     })();
   }, []);
 
+  // Animate progress bar
+  useEffect(() => {
+    if (progress) {
+      const bar = document.querySelector(".progress-fill") as HTMLElement;
+      if (bar) {
+        setTimeout(() => {
+          bar.style.width = `${progress.progress}%`;
+        }, 800);
+      }
+    }
+  }, [progress]);
+
   if (loading) return <p className="p-6">Loading module...</p>;
   if (!module) return <p className="p-6">Module not found.</p>;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-teal-100">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center text-white text-xl">
-              📊
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                Blood Glucose Monitoring
-              </h1>
-              <p className="text-gray-600 text-sm">
-                Master the fundamentals of glucose tracking
-              </p>
-            </div>
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center text-white text-xl">
+            📊
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{module.title}</h1>
+            <p className="text-gray-600 text-sm">
+              Master the fundamentals of glucose tracking
+            </p>
           </div>
         </div>
       </div>
@@ -84,7 +97,7 @@ const BloodGlucoseMonitoring = () => {
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
-            {/* Why Monitoring Matters */}
+            {/* Lessons */}
             <section className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow duration-300">
               <div className="flex items-center gap-3 mb-6">
                 <TrendingUp className="w-6 h-6 text-teal-600" />
@@ -380,31 +393,61 @@ const BloodGlucoseMonitoring = () => {
                 </div>
               </div>
             </section>
+            <div className="lessons-section">
+              <h3 className="mb-4 font-bold text-lg">Lessons</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {module.lessons.map((lesson) => (
+                  <div
+                    key={lesson.id}
+                    onClick={() => setSelectedLesson(lesson)}
+                    className={`p-4 rounded-lg border cursor-pointer transition flex justify-between items-center ${
+                      selectedLesson?.id === lesson.id
+                        ? "border-teal-500 bg-teal-50"
+                        : "border-gray-200 hover:border-teal-400"
+                    }`}
+                  >
+                    <h4 className="font-medium">{lesson.title}</h4>
+                    {lesson.completed && (
+                      <CheckCircle className="w-6 h-6 text-green-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            <section className="bg-white rounded-xl shadow-lg p-8">
-              <div className="progress-header flex justify-between mb-4">
-                <span className="progress-title font-semibold text-gray-700">
-                  Module Progress
-                </span>
+            {/* Study Material for selected lesson */}
+            {selectedLesson && (
+              <QuizMaterial
+                category="bloodGlucose"
+                slug={module.slug}
+                lessonId={selectedLesson.id}
+              />
+            )}
+
+            {/* Progress + Quiz */}
+            <div className="progress-section">
+              <div className="progress-header">
+                <span className="progress-title">Module Progress</span>
                 <span className="progress-percentage">
                   {progress ? `${progress.progress}%` : "0%"}
                 </span>
               </div>
-              <div className="progress-bar h-2 bg-gray-200 rounded-full">
+              <div className="progress-bar">
                 <div
-                  className="progress-fill h-2 bg-teal-500 rounded-full transition-all"
+                  className="progress-fill"
                   style={{ width: `${progress?.progress || 0}%` }}
                 ></div>
               </div>
-              {selectedLesson && (
-                <button
-                  className="quiz-button mt-6"
-                  onClick={() => setModalOpen(true)}
-                >
-                  Take Quiz for {selectedLesson.title} 📝
-                </button>
-              )}
-            </section>
+            </div>
+
+            {selectedLesson && (
+              <button
+                className="quiz-button"
+                onClick={() => setModalOpen(true)}
+              >
+                Take Quiz for {selectedLesson.title} 📝
+              </button>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -412,48 +455,40 @@ const BloodGlucoseMonitoring = () => {
             <div className="info-card">
               <h4>Module Details</h4>
               <div className="info-item">
-                <div className="info-icon time-icon">🕐</div>
+                <div className="info-icon">🕐</div>
                 <div className="info-content">
                   <div className="info-label">Estimated Time</div>
                   <div className="info-value">45 minutes</div>
                 </div>
               </div>
               <div className="info-item">
-                <div className="info-icon access-icon">📅</div>
+                <div className="info-icon">📅</div>
                 <div className="info-content">
                   <div className="info-label">Last Accessed</div>
                   <div className="info-value">
-                    {progress?.lastAccessed || "Never"}
+                    {(progress && formatDate(progress.lastAccessed)) || "Never"}
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mt-1">
-                  ⚕️
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-800 mb-2">
-                    Important Reminder
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    This information is educational only. Always consult your
-                    healthcare provider for personalized advice and treatment
-                    decisions.
-                  </p>
-                </div>
-              </div>
+              <h3 className="font-semibold text-gray-800 mb-2">
+                Important Reminder
+              </h3>
+              <p className="text-sm text-gray-600">
+                This information is educational only. Always consult your
+                healthcare provider for personalized advice.
+              </p>
             </div>
           </div>
         </div>
       </div>
-      {/* Quiz Modal */}
+      {/* Modal Quiz */}
       {selectedLesson && (
         <ReusableModal open={modalOpen} onClose={() => setModalOpen(false)}>
           <QuizPage
-            slug="blood-glucose"
+            slug={module.slug}
             lessonId={selectedLesson.id}
             onClose={() => setModalOpen(false)}
           />

@@ -16,8 +16,8 @@ interface Lesson {
 }
 
 interface QuizPageProps {
-  slug: string; // 👈 module slug
-  lessonId: string; // 👈 selected lesson
+  slug: string;
+  lessonId: string;
   onClose: () => void;
 }
 
@@ -68,9 +68,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ slug, lessonId, onClose }) => {
       try {
         const submission = await QuizService.submit(
           slug,
+          lessonId,
           newAnswers,
           Date.now()
         );
+
         setResult(submission.result);
       } catch (err) {
         console.error("Failed to submit quiz:", err);

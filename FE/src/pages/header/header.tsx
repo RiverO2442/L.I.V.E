@@ -12,7 +12,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { isAuthenticated, logout } = useAuth(); // 👈 use context
+  const { isAuthenticated, logout } = useAuth();
 
   // Handle scroll
   const handleScroll = useCallback(() => {

@@ -86,7 +86,7 @@ export const AuthService = {
       body: JSON.stringify({ name, email, password }),
     }).then((data) => {
       setAccessToken(data.accessToken);
-      return data.user;
+      return data;
     }),
 
   login: (email: string, password: string) =>
@@ -96,7 +96,7 @@ export const AuthService = {
       body: JSON.stringify({ email, password }),
     }).then((data) => {
       setAccessToken(data.accessToken);
-      return data.user;
+      return data;
     }),
 
   logout: () => {
@@ -119,13 +119,14 @@ export const QuizService = {
 
   submit: (
     slug: string,
+    lessonId: string,
     answers: { questionId: string; selectedIndex: number }[],
     startTime: number // timestamp from FE
   ) =>
     apiFetch(`/api/quiz/${slug}/quiz/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers, startTime }),
+      body: JSON.stringify({ lessonId, answers, startTime }),
     }),
 
   getAttempts: (slug: string) => apiFetch(`/api/quiz/${slug}/quiz/attempts`),
