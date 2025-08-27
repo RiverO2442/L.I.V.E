@@ -37,7 +37,7 @@ app.use(cookieParser());
 // Routes
 // -------------------
 app.use("/api/auth", authRouter);
-app.get("/api/api/health", (_req, res) => res.json({ status: "ok 1" }));
+app.get("/api/api/health", (_req, res) => res.json({ status: "ok 1" })); //my stupid, i should remember this
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 app.use("/api/modules", modulesRouter);
 app.use("/api/quiz", quizRouter);
