@@ -26,6 +26,7 @@ app.use(
 );
 app.use(helmet());
 app.use(express.json({ limit: "100kb" }));
+app.set("trust proxy", 1); // trust the first proxy (Nginx)
 app.use(xss());
 app.use(hpp());
 app.use(morgan("dev"));
