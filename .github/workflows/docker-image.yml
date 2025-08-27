@@ -1,4 +1,4 @@
-name: Deploy Backend
+name: Deploy Full Stack
 
 on:
   push:
@@ -12,28 +12,29 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Build backend Docker image
-      run: docker build -t live-backend ./BE
+    # Compress repo for transfer
+    - name: Archive repo
+      run: tar czf live-app.tar.gz .
 
-    - name: Save Docker image
-      run: docker save live-backend | gzip > live-backend.tar.gz
-
-    - name: Copy image to server
+    # Copy to Azure VM
+    - name: Copy files to VM
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.AZURE_HOST }}
         username: ${{ secrets.AZURE_USER }}
         key: ${{ secrets.AZURE_SSH_KEY }}
-        source: "live-backend.tar.gz"
+        source: "live-app.tar.gz"
         target: "~/"
 
-    - name: Load image & restart container on server
+    # SSH into VM: extract, rebuild, restart
+    - name: Deploy on VM
       uses: appleboy/ssh-action@v1.2.0
       with:
         host: ${{ secrets.AZURE_HOST }}
         username: ${{ secrets.AZURE_USER }}
         key: ${{ secrets.AZURE_SSH_KEY }}
         script: |
-          docker load < ~/live-backend.tar.gz
-          cd ~/L.I.V.E-FE
-          docker compose up -d backend
+          cd ~
+          rm -rf L.I.V.E-FE
+          mkdir L.I.V.E-FE
+          tar xz
