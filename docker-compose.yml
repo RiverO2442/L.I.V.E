@@ -4,11 +4,6 @@ services:
     container_name: live-backend
     expose:
       - "3000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=7d
-      - REFRESH_TTL_SEC=604800
     restart: always
 
   frontend:

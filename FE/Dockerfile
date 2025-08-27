@@ -1,28 +1,15 @@
-# ---------- Build Stage ----------
-  FROM node:20-alpine AS build
+FROM node:20 as build
+WORKDIR /app
 
-  WORKDIR /app
-  
-  COPY package*.json ./
-  RUN npm install --legacy-peer-deps
-  
-  COPY . .
-  
-  RUN npm run build
-  
-  # ---------- Production Stage ----------
-  FROM nginx:alpine
-  
-  # Remove default nginx static config
-  RUN rm /etc/nginx/conf.d/default.conf
-  
-  # Copy build output to Nginx
-  COPY --from=build /app/dist /usr/share/nginx/html
-  
-  # Use custom nginx config (optional: SPA fallback)
-  COPY nginx.conf /etc/nginx/conf.d/default.conf
-  
-  EXPOSE 80
-  
-  CMD ["nginx", "-g", "daemon off;"]
-  
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+COPY . .
+# Copy frontend .env
+COPY .env /app/.env
+
+RUN npm run build
+
+FROM nginx:alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html

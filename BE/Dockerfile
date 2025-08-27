@@ -1,26 +1,25 @@
 # ---------- Build Stage ----------
-    FROM node:20-alpine AS build
-
+    FROM node:20 as build
     WORKDIR /app
     
     COPY package*.json ./
-    RUN npm ci --legacy-peer-deps
+    RUN npm install
     
     COPY . .
-    
-    # Generate Prisma client
-    RUN npx prisma generate || true
+    RUN npx prisma generate
     
     # ---------- Production Stage ----------
-    FROM node:20-alpine
-    
+    FROM node:20-slim
     WORKDIR /app
     
-    # Install PM2 globally
+    COPY --from=build /app /app
     RUN npm install -g pm2
     
-    COPY --from=build /app /app
+    # Copy backend .env
+    COPY .env /app/.env
     
+    ENV NODE_ENV=production
     EXPOSE 3000
     
     CMD ["pm2-runtime", "src/server.js"]
+    
