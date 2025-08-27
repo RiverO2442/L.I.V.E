@@ -1,16 +1,9 @@
-import {
-  Heart,
-  Target,
-  BookOpen,
-  Clock,
-  CheckCircle,
-  PlayCircle,
-} from "lucide-react";
+import { BookOpen, CheckCircle, Heart, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ModuleService, ProgressService } from "../../../service/service";
 import ReusableModal from "../../../utility/modal";
-import QuizPage from "../../quiz/quiz";
 import QuizMaterial from "../../../utility/quizMaterial/quizMaterial";
+import QuizPage from "../../quiz/quiz";
 interface Progress {
   moduleId: string;
   progress: number;

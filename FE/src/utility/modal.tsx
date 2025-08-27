@@ -20,7 +20,6 @@ interface ReusableModalProps {
 const ReusableModal: React.FC<ReusableModalProps> = ({
   open,
   onClose,
-  title,
   children,
 }) => {
   return (
