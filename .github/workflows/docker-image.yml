@@ -1,40 +1,24 @@
-name: Deploy Full Stack
+name: Deploy to Azure VM
 
 on:
   push:
-    branches: [ "release" ]
+    branches:
+      - release
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # Compress repo for transfer
-    - name: Archive repo
-      run: tar czf live-app.tar.gz .
-
-    # Copy to Azure VM
-    - name: Copy files to VM
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.AZURE_HOST }}
-        username: ${{ secrets.AZURE_USER }}
-        key: ${{ secrets.AZURE_SSH_KEY }}
-        source: "live-app.tar.gz"
-        target: "~/"
-
-    # SSH into VM: extract, rebuild, restart
-    - name: Deploy on VM
-      uses: appleboy/ssh-action@v1.2.0
-      with:
-        host: ${{ secrets.AZURE_HOST }}
-        username: ${{ secrets.AZURE_USER }}
-        key: ${{ secrets.AZURE_SSH_KEY }}
-        script: |
-          cd ~
-          rm -rf L.I.V.E-FE
-          mkdir L.I.V.E-FE
-          tar xz
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_KEY }}
+          script: |
+            cd ~/L.I.V.E-FE
+            ./deploy.sh
