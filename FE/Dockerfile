@@ -3,14 +3,11 @@
 
   WORKDIR /app
   
-  # Install deps
   COPY package*.json ./
-  RUN npm ci
+  RUN npm install --legacy-peer-deps
   
-  # Copy source code
   COPY . .
   
-  # Build production bundle
   RUN npm run build
   
   # ---------- Production Stage ----------
