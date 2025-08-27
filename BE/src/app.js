@@ -36,11 +36,11 @@ app.use(cookieParser());
 // -------------------
 // Routes
 // -------------------
-app.use("/auth", authRouter);
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
-app.use("/modules", modulesRouter);
-app.use("/quiz", quizRouter);
-app.use("/progress", progressRouter);
+app.use("/api/auth", authRouter);
+app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.use("/api/modules", modulesRouter);
+app.use("/api/quiz", quizRouter);
+app.use("/api/progress", progressRouter);
 
 // -------------------
 // Error handlers
