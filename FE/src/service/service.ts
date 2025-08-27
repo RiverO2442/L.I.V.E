@@ -20,7 +20,7 @@ function getAccessToken() {
 async function tryRefresh(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
 
-  refreshInFlight = fetch(`${API_URL}/api/auth/refresh`, {
+  refreshInFlight = fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     credentials: "include",
   })
@@ -80,7 +80,7 @@ async function apiFetch<T = any>(
 /* ===================== AUTH ===================== */
 export const AuthService = {
   register: (name: string, email: string, password: string) =>
-    apiFetch<{ user: any; accessToken: string }>("/api/auth/register", {
+    apiFetch<{ user: any; accessToken: string }>("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
@@ -90,7 +90,7 @@ export const AuthService = {
     }),
 
   login: (email: string, password: string) =>
-    apiFetch<{ user: any; accessToken: string }>("/api/auth/login", {
+    apiFetch<{ user: any; accessToken: string }>("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -101,21 +101,21 @@ export const AuthService = {
 
   logout: () => {
     setAccessToken(null);
-    return apiFetch("/api/auth/logout", { method: "POST" });
+    return apiFetch("/auth/logout", { method: "POST" });
   },
 
-  me: () => apiFetch("/api/auth/me"),
+  me: () => apiFetch("/auth/me"),
 };
 
 /* ===================== MODULES ===================== */
 export const ModuleService = {
-  list: () => apiFetch("/api/modules"),
-  getBySlug: (slug: string) => apiFetch(`/api/modules/${slug}`),
+  list: () => apiFetch("/modules"),
+  getBySlug: (slug: string) => apiFetch(`/modules/${slug}`),
 };
 
 /* ===================== QUIZZES ===================== */
 export const QuizService = {
-  getByModuleSlug: (slug: string) => apiFetch(`/api/quiz/${slug}/quiz`),
+  getByModuleSlug: (slug: string) => apiFetch(`/quiz/${slug}/quiz`),
 
   submit: (
     slug: string,
@@ -123,13 +123,13 @@ export const QuizService = {
     answers: { questionId: string; selectedIndex: number }[],
     startTime: number // timestamp from FE
   ) =>
-    apiFetch(`/api/quiz/${slug}/quiz/submit`, {
+    apiFetch(`/quiz/${slug}/quiz/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lessonId, answers, startTime }),
     }),
 
-  getAttempts: (slug: string) => apiFetch(`/api/quiz/${slug}/quiz/attempts`),
+  getAttempts: (slug: string) => apiFetch(`/quiz/${slug}/quiz/attempts`),
 
   addQuiz: (
     slug: string,
@@ -141,7 +141,7 @@ export const QuizService = {
       lessonId?: string;
     }
   ) =>
-    apiFetch(`/api/quiz/${slug}/quiz`, {
+    apiFetch(`/quiz/${slug}/quiz`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -150,21 +150,20 @@ export const QuizService = {
 
 /* ===================== PROGRESS ===================== */
 export const ProgressService = {
-  myProgress: () => apiFetch("/api/progress/me"),
+  myProgress: () => apiFetch("/progress/me"),
 
   update: (moduleId: string, progress: number, timeSpentMin?: number) =>
-    apiFetch("/api/progress/update", {
+    apiFetch("/progress/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ moduleId, progress, timeSpentMin }),
     }),
 
   // Lesson-level
-  getLessons: (moduleId: string) =>
-    apiFetch(`/api/progress/${moduleId}/lessons`),
+  getLessons: (moduleId: string) => apiFetch(`/progress/${moduleId}/lessons`),
 
   updateLesson: (moduleId: string, lessonId: string, completed = true) =>
-    apiFetch(`/api/progress/${moduleId}/lessons/${lessonId}`, {
+    apiFetch(`/progress/${moduleId}/lessons/${lessonId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ completed }),
