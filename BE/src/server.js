@@ -2,7 +2,9 @@ import dotenv from "dotenv";
 dotenv.config();
 import app from "./app.js";
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`L.I.V.E API running on http://localhost:${PORT}`);
+const PORT = process.env.PORT || 3000;
+
+// IMPORTANT: bind to 0.0.0.0 (not localhost)
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`L.I.V.E API running on http://0.0.0.0:${PORT}`);
 });
