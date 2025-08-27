@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  backend:
+    build: ./BE
+    container_name: live-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=7d
+      - REFRESH_TTL_SEC=604800
+    restart: always
+
+  frontend:
+    build: ./FE
+    container_name: live-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
