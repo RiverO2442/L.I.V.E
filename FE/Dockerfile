@@ -2,7 +2,8 @@
   FROM node:20-alpine AS build
   WORKDIR /app
   COPY package*.json ./
-  RUN npm ci
+  # Use --legacy-peer-deps to bypass React 19 vs material-ui conflict
+  RUN npm install --legacy-peer-deps
   COPY . .
   RUN npm run build
   
