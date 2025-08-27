@@ -1,31 +1,39 @@
-name: Deploy to Azure VM
+name: Deploy Backend
 
 on:
   push:
-    branches:
-      - release   # deploy when release branch is updated
+    branches: [ "release" ]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.AZURE_SSH_KEY }}
+    - name: Build backend Docker image
+      run: docker build -t live-backend ./BE
 
-      - name: Copy files to VM
-        run: |
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ rivero2442@4.250.104.28:/home/rivero2442/LIVE
+    - name: Save Docker image
+      run: docker save live-backend | gzip > live-backend.tar.gz
 
-      - name: Rebuild & restart containers on VM
-        run: |
-          ssh -o StrictHostKeyChecking=no rivero2442@4.250.104.28 "
-            cd LIVE &&
-            docker compose down &&
-            docker compose up -d --build
-          "
+    - name: Copy image to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.AZURE_HOST }}
+        username: ${{ secrets.AZURE_USER }}
+        key: ${{ secrets.AZURE_SSH_KEY }}
+        source: "live-backend.tar.gz"
+        target: "~/"
+
+    - name: Load image & restart container on server
+      uses: appleboy/ssh-action@v1.2.0
+      with:
+        host: ${{ secrets.AZURE_HOST }}
+        username: ${{ secrets.AZURE_USER }}
+        key: ${{ secrets.AZURE_SSH_KEY }}
+        script: |
+          docker load < ~/live-backend.tar.gz
+          cd ~/L.I.V.E-FE
+          docker compose up -d backend
