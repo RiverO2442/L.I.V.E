@@ -2,9 +2,11 @@ import { useEffect } from "react";
 import { navigatePath } from "../utility/router-config";
 import "./styles.css";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../utility/authContext";
 
 const AboutPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   useEffect(() => {
     const observerOptions = {
       threshold: 0.1,
@@ -53,7 +55,7 @@ const AboutPage = () => {
   }, []);
 
   const exploreModules = () => {
-    navigate(`/${navigatePath.login}`);
+    navigate(`/${isAuthenticated ? navigatePath.home : navigatePath.login}`);
   };
 
   return (
@@ -175,7 +177,7 @@ const AboutPage = () => {
             management...
           </p>
           <button className="cta-button" onClick={exploreModules}>
-            To Login
+            {isAuthenticated ? "To Your Modules" : "To Login"}
           </button>
         </div>
       </section>
