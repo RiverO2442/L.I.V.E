@@ -91,14 +91,23 @@ const HealthyEatingModule: React.FC = () => {
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
-            {/* Video */}
             <div className="video-section">
               <div className="video-container">
-                <div className="video-placeholder">
-                  <div className="play-button">▶</div>
-                  <p>Introduction to {module.title}</p>
-                  <small>Duration: 12:45</small>
-                </div>
+                <iframe
+                  src="https://www.youtube.com/embed/wOIZEz0hAY4"
+                  title={`Introduction to ${module.title}`}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  className="youtube-player"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                  }}
+                ></iframe>
               </div>
             </div>
 

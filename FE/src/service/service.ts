@@ -1,4 +1,5 @@
-// src/services.ts
+import CryptoJS from "crypto-js";
+
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 let accessToken: string | null = null;
@@ -79,25 +80,31 @@ async function apiFetch<T = any>(
 
 /* ===================== AUTH ===================== */
 export const AuthService = {
-  register: (name: string, email: string, password: string) =>
-    apiFetch<{ user: any; accessToken: string }>("/auth/register", {
+  register: (name: string, email: string, password: string) => {
+    // 🔒 Hash password on FE
+    const hashedPassword = CryptoJS.SHA256(password).toString();
+    return apiFetch<{ user: any; accessToken: string }>("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password: hashedPassword }),
     }).then((data) => {
       setAccessToken(data.accessToken);
       return data;
-    }),
+    });
+  },
 
-  login: (email: string, password: string) =>
-    apiFetch<{ user: any; accessToken: string }>("/auth/login", {
+  login: (email: string, password: string) => {
+    // 🔒 Hash password on FE
+    const hashedPassword = CryptoJS.SHA256(password).toString();
+    return apiFetch<{ user: any; accessToken: string }>("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password: hashedPassword }),
     }).then((data) => {
       setAccessToken(data.accessToken);
       return data;
-    }),
+    });
+  },
 
   logout: () => {
     setAccessToken(null);

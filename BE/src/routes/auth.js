@@ -10,6 +10,7 @@ import {
   setRefreshCookie,
   clearRefreshCookie,
 } from "../middleware/auth.js";
+import CryptoJS from "crypto-js";
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -42,7 +43,10 @@ router.post("/register", async (req, res, next) => {
     if (exists)
       return res.status(409).json({ error: "Email already registered" });
 
-    const passwordHash = await bcrypt.hash(value.password, 12);
+    // in register route
+    const sha256 = CryptoJS.SHA256(value.password).toString();
+    const passwordHash = await bcrypt.hash(sha256, 12);
+
     const user = await prisma.user.create({
       data: { name: value.name, email: value.email, passwordHash },
       select: { id: true, name: true, email: true, createdAt: true },
@@ -77,12 +81,16 @@ router.post("/login", async (req, res, next) => {
         .status(400)
         .json({ error: "Invalid payload", details: error.details });
 
+    // in login route
     const user = await prisma.user.findUnique({
       where: { email: value.email },
     });
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
-    const ok = await bcrypt.compare(value.password, user.passwordHash);
+    // rehash input with SHA-256 before bcrypt.compare
+    const sha256 = CryptoJS.SHA256(value.password).toString();
+    const ok = await bcrypt.compare(sha256, user.passwordHash);
+
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 
     const publicUser = {
