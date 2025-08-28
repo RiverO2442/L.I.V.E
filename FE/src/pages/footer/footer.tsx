@@ -1,18 +1,15 @@
+import "./styles.css";
 export default function Footer() {
   return (
-    <footer className="text-center text-white bg-[#0a4275] flex flex-col justify-center items-center">
-      <div className="container p-4 pb-0">
-        <section className="">
-          <p className="d-flex justify-content-center align-items-center">
-            <span className="me-3">Your Free Media Collection</span>
-          </p>
-        </section>
-      </div>
-      <div className="text-center p-3 bg-[rgba(0, 0, 0, 0.2)]">
-        © 2025 Copyright:
-        <a className="p-2 text-white" href="#">
-          Meowilla
-        </a>
+    <footer>
+      <div className="container">
+        <p>
+          <strong>L.I.V.E</strong> - Learn. Improve. Visualise. Empower.
+        </p>
+        <p className="footer-tagline">
+          Empowering your diabetes management journey
+        </p>
+        <p>&copy; 2025 L.I.V.E Platform. All rights reserved.</p>
       </div>
     </footer>
   );

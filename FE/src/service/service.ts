@@ -1,126 +1,178 @@
-import axios from "axios";
+import CryptoJS from "crypto-js";
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL;
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+let accessToken: string | null = null;
+let refreshInFlight: Promise<string | null> | null = null;
 
-const token = localStorage.getItem("token");
-if (token) {
-  apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+function setAccessToken(token: string | null) {
+  accessToken = token;
+  if (token) localStorage.setItem("accessToken", token);
+  else localStorage.removeItem("accessToken");
 }
 
-// Register User
-export const registerUser = async (
-  username: string,
-  email: string,
-  password: string
-) => {
-  try {
-    return await apiClient.post("/register", {
-      username: username.toLowerCase(),
-      email: email.toLowerCase(),
-      password,
-    });
-  } catch (error) {
-    throw error;
+function getAccessToken() {
+  if (!accessToken) {
+    accessToken = localStorage.getItem("accessToken");
   }
-};
+  return accessToken;
+}
 
-// Login User
-export const loginUser = async (email: string, password: string) => {
-  try {
-    const response = await apiClient.post("/login", {
-      email: email.toLowerCase(),
-      password,
+async function tryRefresh(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = fetch(`${API_URL}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+  })
+    .then(async (res) => {
+      if (!res.ok) throw new Error("refresh-failed");
+      const data = await res.json();
+      setAccessToken(data.accessToken);
+      return data.accessToken as string;
+    })
+    .catch(() => {
+      setAccessToken(null);
+      return null;
+    })
+    .finally(() => {
+      refreshInFlight = null;
     });
 
-    const { token } = response.data;
-    if (token) {
-      localStorage.setItem("token", token);
-      apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  return refreshInFlight;
+}
+
+/**
+ * apiFetch: always returns parsed JSON
+ */
+async function apiFetch<T = any>(
+  path: string,
+  init: RequestInit = {}
+): Promise<T> {
+  const token = getAccessToken();
+  const headers = new Headers(init.headers || {});
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  let res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+  });
+
+  if (res.status === 401) {
+    const newToken = await tryRefresh();
+    if (newToken) {
+      const retryHeaders = new Headers(init.headers || {});
+      retryHeaders.set("Authorization", `Bearer ${newToken}`);
+      res = await fetch(`${API_URL}${path}`, {
+        ...init,
+        headers: retryHeaders,
+        credentials: "include",
+      });
     }
-
-    return response.data;
-  } catch (error) {
-    throw error;
   }
-};
 
-// Google Login
-export const googleLogin = async () => {
-  window.location.href = `${API_BASE_URL}/auth/login`;
-};
-
-// Fetch Recent Searches
-export const fetchRecentSearches = async () => {
-  try {
-    return await apiClient.get("/recent_searches");
-  } catch (error) {
-    throw error;
+  if (!res.ok) {
+    throw new Error(await res.text());
   }
-};
+  return res.json();
+}
 
-// Save Recent Search
-export const saveSearch = async (query: string) => {
-  try {
-    return await apiClient.post("/recent_searches", {
-      query: query.toLowerCase(),
+/* ===================== AUTH ===================== */
+export const AuthService = {
+  register: (name: string, email: string, password: string) => {
+    // 🔒 Hash password on FE
+    const hashedPassword = CryptoJS.SHA256(password).toString();
+    return apiFetch<{ user: any; accessToken: string }>("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password: hashedPassword }),
+    }).then((data) => {
+      setAccessToken(data.accessToken);
+      return data;
     });
-  } catch (error) {
-    throw error;
-  }
+  },
+
+  login: (email: string, password: string) => {
+    // 🔒 Hash password on FE
+    const hashedPassword = CryptoJS.SHA256(password).toString();
+    return apiFetch<{ user: any; accessToken: string }>("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: hashedPassword }),
+    }).then((data) => {
+      setAccessToken(data.accessToken);
+      return data;
+    });
+  },
+
+  logout: () => {
+    setAccessToken(null);
+    return apiFetch("/auth/logout", { method: "POST" });
+  },
+
+  me: () => apiFetch("/auth/me"),
 };
 
-// Delete Recent Search
-export const deleteSearch = async (searchId: number) => {
-  try {
-    return await apiClient.delete(`/recent_searches/${searchId}`);
-  } catch (error) {
-    throw error;
-  }
+/* ===================== MODULES ===================== */
+export const ModuleService = {
+  list: () => apiFetch("/modules"),
+  getBySlug: (slug: string) => apiFetch(`/modules/${slug}`),
 };
 
-export const imageSearch = async (param: any) => {
-  try {
-    return await apiClient.get(
-      `/images?q=${param.query.length > 0 ? param.query : "random"}&page=${
-        param.page
-      }`
-    );
-  } catch (error) {
-    throw error;
-  }
+/* ===================== QUIZZES ===================== */
+export const QuizService = {
+  getByModuleSlug: (slug: string) => apiFetch(`/quiz/${slug}/quiz`),
+
+  submit: (
+    slug: string,
+    lessonId: string,
+    answers: { questionId: string; selectedIndex: number }[],
+    startTime: number // timestamp from FE
+  ) =>
+    apiFetch(`/quiz/${slug}/quiz/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lessonId, answers, startTime }),
+    }),
+
+  getAttempts: (slug: string) => apiFetch(`/quiz/${slug}/quiz/attempts`),
+
+  addQuiz: (
+    slug: string,
+    data: {
+      question: string;
+      feedback: string;
+      options: string[];
+      correctIndex: number;
+      lessonId?: string;
+    }
+  ) =>
+    apiFetch(`/quiz/${slug}/quiz`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
 };
 
-export const imageDetail = async (param: any) => {
-  try {
-    return await apiClient.get(`/images/${param}`);
-  } catch (error) {
-    throw error;
-  }
-};
+/* ===================== PROGRESS ===================== */
+export const ProgressService = {
+  myProgress: () => apiFetch("/progress/me"),
 
-export const audioSearch = async (param: any) => {
-  try {
-    return await apiClient.get(
-      `/audios?q=${param.query.length > 0 ? param.query : "random"}&page=${
-        param.page
-      }`
-    );
-  } catch (error) {
-    throw error;
-  }
-};
+  update: (moduleId: string, progress: number, timeSpentMin?: number) =>
+    apiFetch("/progress/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId, progress, timeSpentMin }),
+    }),
 
-export const audioDetail = async (param: any) => {
-  try {
-    return await apiClient.get(`/audio/${param}`);
-  } catch (error) {
-    throw error;
-  }
+  // Lesson-level
+  getLessons: (moduleId: string) => apiFetch(`/progress/${moduleId}/lessons`),
+
+  updateLesson: (moduleId: string, lessonId: string, completed = true) =>
+    apiFetch(`/progress/${moduleId}/lessons/${lessonId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed }),
+    }),
 };
