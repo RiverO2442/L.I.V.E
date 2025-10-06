@@ -52,12 +52,11 @@ The application will be accessible at [http://localhost:5173](http://localhost:5
 ---
 
 ## 🌐 Live Deployment
-
-* Website is deployed at: [https://4.250.104.28/login](https://4.250.104.28/login)
-
-> ⚠️ Note: The site uses a self-signed certificate; please allow progression in your browser.
-
+- Previously deployed at: [https://4.250.104.28/login](https://4.250.104.28/login)
+> ⚠️ Note: The server subscription is currently inactive, so the live site is temporarily unavailable.
 ---
+
+![Dashboard Screenshot](./assets/dashboard.png)
 
 ## 🛠 Technology Stack
 
@@ -88,3 +87,4 @@ Contributions are welcome! Please fork the repository and create a pull request 
 ## 📄 License
 
 This project is open-source and available under the MIT License.
+
